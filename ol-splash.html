@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>前端空间插值</title>
+    <style>
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+    <link href="../openlayer/ol.css" rel="stylesheet" />
+    <script src="../openlayer/ol-debug.js"></script>
+    <script src="../js/jqure1.7.min.js"></script>
+    <script src="../js/kriging/kriging_.js"></script>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script type="text/javascript">
+
+        function AjaxGET() {
+            $.ajax({
+                type: "get",
+                url: "../data/getLatest.json",
+                dataType: "json",
+                success: function (json) {
+                    console.log(json)
+                    MapInit(json.data);
+                }
+            });
+        }
+        AjaxGET()
+        function MapInit(data) {
+            let params = {
+                mapCenter: [115.79, 36.142],
+                krigingModel: 'exponential',//model还可选'gaussian','spherical' 'exponential'
+                krigingSigma2: 50,
+                krigingAlpha: 121,
+                canvasAlpha: 0.5,//canvas图层透明度
+                colors: [
+                    { min: 0, max: 50, color: '#00E500' },
+                    { min: 50, max: 100, color: '#FFFF00' },
+                    { min: 100, max: 150, color: '#FF7E00' },
+                    { min: 150, max: 200, color: '#FE0000' },
+                    { min: 200, max: 250, color: '#98004B' },
+                    { min: 250, max: 300, color: '#7E0123' },
+                ]
+                // colors: ["#00A600", "#01A600", "#03A700", "#04A700", "#05A800", "#07A800", "#08A900", "#09A900", "#0BAA00", "#0CAA00", "#0DAB00", "#0FAB00", "#10AC00", "#12AC00", "#13AD00", "#14AD00", "#16AE00", "#17AE00", "#19AF00", "#1AAF00", "#1CB000", "#1DB000", "#1FB100", "#20B100", "#22B200", "#23B200", "#25B300", "#26B300", "#28B400", "#29B400", "#2BB500", "#2CB500", "#2EB600", "#2FB600", "#31B700", "#33B700", "#34B800", "#36B800", "#37B900", "#39B900", "#3BBA00", "#3CBA00", "#3EBB00", "#3FBB00", "#41BC00", "#43BC00", "#44BD00", "#46BD00", "#48BE00", "#49BE00", "#4BBF00", "#4DBF00", "#4FC000", "#50C000", "#52C100", "#54C100", "#55C200", "#57C200", "#59C300", "#5BC300", "#5DC400", "#5EC400", "#60C500", "#62C500", "#64C600", "#66C600", "#67C700", "#69C700", "#6BC800", "#6DC800", "#6FC900", "#71C900", "#72CA00", "#74CA00", "#76CB00", "#78CB00", "#7ACC00", "#7CCC00", "#7ECD00", "#80CD00", "#82CE00", "#84CE00", "#86CF00", "#88CF00", "#8AD000", "#8BD000", "#8DD100", "#8FD100", "#91D200", "#93D200", "#95D300", "#97D300", "#9AD400", "#9CD400", "#9ED500", "#A0D500", "#A2D600", "#A4D600", "#A6D700", "#A8D700", "#AAD800", "#ACD800", "#AED900", "#B0D900", "#B2DA00", "#B5DA00", "#B7DB00", "#B9DB00", "#BBDC00", "#BDDC00", "#BFDD00", "#C2DD00", "#C4DE00", "#C6DE00", "#C8DF00", "#CADF00", "#CDE000", "#CFE000", "#D1E100", "#D3E100", "#D6E200", "#D8E200", "#DAE300", "#DCE300", "#DFE400", "#E1E400", "#E3E500", "#E6E600", "#E6E402", "#E6E204", "#E6E105", "#E6DF07", "#E6DD09", "#E6DC0B", "#E6DA0D", "#E6D90E", "#E6D710", "#E6D612", "#E7D414", "#E7D316", "#E7D217", "#E7D019", "#E7CF1B", "#E7CE1D", "#E7CD1F", "#E7CB21", "#E7CA22", "#E7C924", "#E8C826", "#E8C728", "#E8C62A", "#E8C52B", "#E8C42D", "#E8C32F", "#E8C231", "#E8C133", "#E8C035", "#E8BF36", "#E9BE38", "#E9BD3A", "#E9BC3C", "#E9BB3E", "#E9BB40", "#E9BA42", "#E9B943", "#E9B945", "#E9B847", "#E9B749", "#EAB74B", "#EAB64D", "#EAB64F", "#EAB550", "#EAB552", "#EAB454", "#EAB456", "#EAB358", "#EAB35A", "#EAB35C", "#EBB25D", "#EBB25F", "#EBB261", "#EBB263", "#EBB165", "#EBB167", "#EBB169", "#EBB16B", "#EBB16C", "#EBB16E", "#ECB170", "#ECB172", "#ECB174", "#ECB176", "#ECB178", "#ECB17A", "#ECB17C", "#ECB17E", "#ECB27F", "#ECB281", "#EDB283", "#EDB285", "#EDB387", "#EDB389", "#EDB38B", "#EDB48D", "#EDB48F", "#EDB591", "#EDB593", "#EDB694", "#EEB696", "#EEB798", "#EEB89A", "#EEB89C", "#EEB99E", "#EEBAA0", "#EEBAA2", "#EEBBA4", "#EEBCA6", "#EEBDA8", "#EFBEAA", "#EFBEAC", "#EFBFAD", "#EFC0AF", "#EFC1B1", "#EFC2B3", "#EFC3B5", "#EFC4B7", "#EFC5B9", "#EFC7BB", "#F0C8BD", "#F0C9BF", "#F0CAC1", "#F0CBC3", "#F0CDC5", "#F0CEC7", "#F0CFC9", "#F0D1CB", "#F0D2CD", "#F0D3CF", "#F1D5D1", "#F1D6D3", "#F1D8D5", "#F1D9D7", "#F1DBD8", "#F1DDDA", "#F1DEDC", "#F1E0DE", "#F1E2E0", "#F1E3E2", "#F2E5E4", "#F2E7E6", "#F2E9E8", "#F2EBEA", "#F2ECEC", "#F2EEEE", "#F2F0F0", "#F2F2F2"]
+            };
+            let baseLayer = new ol.layer.Tile({
+                title: "base",
+                source: new ol.source.OSM()
+            });
+            var map = new ol.Map({
+                target: 'map',
+                layers: [baseLayer],
+                view: new ol.View({
+                    center: params.mapCenter,
+                    projection: 'EPSG:4326',
+                    zoom: 8
+                })
+            });
+            map.on('click',(evt) => {
+                console.log(evt)
+                const px = map.getPixelFromCoordinate(evt.coordinate);
+            })
+
+            let WFSVectorSource = new ol.source.Vector();
+            let WFSVectorLayer = new ol.layer.Vector(
+                {
+                    source: WFSVectorSource,
+                });
+            map.addLayer(WFSVectorLayer);
+            //定义裁剪边界
+            var coord =  [[[116.05883026123047, 36.88069534301758], [116.12857055664074, 36.88832473754883], [116.16789245605469, 36.936771392822266], [116.20486450195324, 36.9648323059082], [116.23371124267578, 37.02350616455084], [116.30213165283214, 36.98831558227545], [116.32343292236328, 36.970138549804744], [116.43280029296886, 36.96689605712896], [116.45199584960938, 36.956863403320256], [116.45880126953125, 36.934246063232536], [116.42424011230469, 36.897548675537166], [116.4191665649414, 36.87055206298834], [116.38722229003918, 36.796733856201286], [116.39975738525402, 36.76072311401367], [116.38756561279308, 36.731239318847656], [116.40126800537132, 36.70432662963873], [116.40677642822266, 36.6568336486817], [116.39505004882824, 36.52444839477545], [116.44647979736351, 36.493713378906364], [116.45575714111328, 36.44969940185541], [116.49484252929688, 36.44376754760748], [116.54493713378918, 36.40079116821289], [116.50951385498047, 36.377944946289176], [116.47891998291027, 36.33679962158203], [116.44329071044933, 36.336921691894645], [116.32552337646484, 36.290496826171875], [116.27454376220703, 36.2218589782716], [116.20741271972656, 36.169773101806754], [116.16371154785156, 36.1711540222168], [116.15852355957043, 36.14592742919922], [116.1110076904298, 36.12730026245117], [116.09490203857422, 36.1111297607423], [116.05631256103516, 36.104995727539176], [116.01735687255871, 36.06333923339844], [115.92543792724621, 36.02585220336914], [115.89026641845703, 36.0249404907226], [115.85330963134777, 36.0066299438476], [115.80311584472656, 36.01005172729498], [115.74849700927734, 35.97412109375006], [115.68595886230469, 35.96349334716808], [115.65953826904308, 35.93789672851568], [115.64204406738281, 35.92935180664074], [115.58512115478538, 35.92505645751953], [115.5428695678711, 35.89764404296881], [115.50706481933594, 35.89407730102545], [115.44414520263672, 35.86289215087896], [115.39887237548828, 35.81025314331066], [115.35540771484375, 35.784446716308594], [115.33479309082031, 35.80162811279297], [115.33245086669933, 35.86394882202154], [115.36087036132824, 35.90924835205084], [115.34718322753906, 35.94689178466808], [115.35207366943371, 35.97102355957031], [115.43162536621105, 36.00341796875], [115.44813537597656, 36.075164794921875], [115.48091888427734, 36.126602172851506], [115.47286987304688, 36.16936111450207], [115.47711181640625, 36.2026824951173], [115.46441650390636, 36.257820129394474], [115.4229507446289, 36.28858184814453], [115.40888214111351, 36.32630920410156], [115.36056518554688, 36.308712005615234], [115.36262512207031, 36.342380523681754], [115.34253692626964, 36.38442230224621], [115.29388427734386, 36.41213226318354], [115.30603790283203, 36.43793106079113], [115.28143310546875, 36.47678756713873], [115.29291534423851, 36.520103454589844], [115.32230377197277, 36.54581069946295], [115.33660125732433, 36.61305999755865], [115.36998748779308, 36.63021469116222], [115.41259002685547, 36.683006286621094], [115.4307861328125, 36.68991088867193], [115.4688491821289, 36.74204254150402], [115.48047637939464, 36.76197052001953], [115.58241271972656, 36.779426574707145], [115.68394470214855, 36.81945800781256], [115.7004165649414, 36.87666702270502], [115.75374603271496, 36.915134429931754], [115.77561950683594, 36.909465789794865], [115.8946304321289, 36.905590057373104], [115.91487121582031, 36.89275741577154], [116.05883026123047, 36.88069534301758]]];
+            let clipgeom = new ol.geom.Polygon(coord);
+            //绘制kriging插值图
+            let canvasLayer = null;
+            let drawKriging = function (extent) {
+                let values = [], lngs = [], lats = [];
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i].lon && data[i].lat && data[i].AQI) {
+                        values.push(data[i].AQI);
+                        lngs.push(data[i].lon);
+                        lats.push(data[i].lat);
+
+                        let feature = new ol.Feature({
+                            geometry: new ol.geom.Point([data[i].lon, data[i].lat]),
+                            value: data[i].AQI
+                        });
+                        feature.setStyle(new ol.style.Style({
+                            image: new ol.style.Circle({
+                                radius: 6,
+                                fill: new ol.style.Fill({ color: getColor(params.colors, data[i].AQI) })
+                            })
+                        }));
+                        // WFSVectorSource.addFeature(feature);
+                    }
+                }
+                console.log(values.length)
+                if (values.length > 3) {
+                    let letiogram = kriging.train(values, lngs, lats,
+                        params.krigingModel, params.krigingSigma2, params.krigingAlpha);
+                    let ex = clipgeom.getExtent();
+                    let grid = kriging.grid(coord, letiogram, (ex[2] - ex[0]) / 500);
+                    //移除已有图层
+                    if (canvasLayer !== null) {
+                        map.removeLayer(canvasLayer);
+                    }
+                    //创建新图层
+                    canvasLayer = new ol.layer.Image({
+                        source: new ol.source.ImageCanvas({
+                            canvasFunction: (extent, resolution, pixelRatio, size, projection) => {
+                                console.log(extent);
+                                let canvas = document.createElement('canvas');
+                                canvas.width = size[0];
+                                canvas.height = size[1];
+                                canvas.style.display = 'block';
+                                //设置canvas透明度
+                                canvas.getContext('2d').globalAlpha = params.canvasAlpha;
+                                //使用分层设色渲染
+                                kriging.plot(canvas, grid,
+                                    [extent[0], extent[2]], [extent[1], extent[3]], params.colors);
+                                return canvas;
+                            },
+                            projection: 'EPSG:4326'
+                        })
+                    })
+                    //向map添加图层
+                    map.addLayer(canvasLayer);
+                } else {
+                    alert("有效样点个数不足，无法插值");
+                }
+            }
+            //首次加载，自动渲染一次差值图
+            let extent = clipgeom.getExtent();
+            drawKriging(extent);
+        }
+
+
+
+
+        function getColor(colors, value) {
+            var len = colors.length;
+            for (var i = 0; i < len; i++) {
+                if (value > colors[i].min && value <= colors[i].max) return colors[i].color;
+            }
+        }
+    </script>
+</body>
+
+</html>
