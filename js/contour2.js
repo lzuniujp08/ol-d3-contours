@@ -67,7 +67,7 @@ var Psdb = window.Psdb = Psdb || {};
         };
 
         //清屏
-        context.clearRect(0,0,width,height);
+        context.clearRect(0,0,this.width,this.height);
 
         //绘制热图
         if(me.mode.mapType === "heatmap"){
@@ -155,8 +155,8 @@ var Psdb = window.Psdb = Psdb || {};
         var me = this;
 
         var mapAlpha = Math.round(255*mode.mapAlpha);
-        for (var j = 0,k = 0, l = 0;j < width; ++j) {
-                for (var i = 0; i < height; ++i,++k, l += 4) {
+        for (var j = 0,k = 0, l = 0;j < me.width; ++j) {
+                for (var i = 0; i < me.height; ++i,++k, l += 4) {
                     var c = me.getColor(me.newData[k]);
                     me.heatMapImage.data[l + 0] = c.r;
                     me.heatMapImage.data[l + 1] = c.g;

@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 
-
-
 <head>
     <meta charset="UTF-8">
     <title>contour</title>
@@ -19,14 +17,17 @@
             top: 0px;
             left: 0px;
             opacity: 0.5;
+            width: 1620px;
+            height: 900px;
         }
     </style>
 </head>
 
 <body>
     <div id="map"></div>
-
+    <canvas id="contour"></canvas>
 </body>
+
 <script src="lib/jqure1.7.min.js"></script>
 <script src="lib/d3.v4.min.js"></script>
 <script src="lib/d3-contour.v1.min.js"></script>
@@ -34,7 +35,6 @@
 <script src="lib/openlayer/ol-debug.js"></script>
 <script src="js/contour2.js"></script>
 <script>
-
 
     let baseLayer = new ol.layer.Tile({
         title: "base",
@@ -55,42 +55,6 @@
         const px = olMap.getPixelFromCoordinate(evt.coordinate);
         AjaxGET()
     })
-
-    var canvasLayer = null;
-
-    //移除已有图层
-    if (canvasLayer !== null) {
-        olMap.removeLayer(canvasLayer);
-    }
-    var task = true;
-    //创建新图层
-    canvasLayer = new ol.layer.Image({
-        source: new ol.source.ImageCanvas({
-            canvasFunction: (extent, resolution, pixelRatio, size, projection) => {
-                console.log(extent);
-                let canvas = document.createElement('canvas');
-                canvas.width = size[0];
-                canvas.height = size[1];
-                canvas.style.display = 'block';
-                //设置canvas透明度
-                canvas.getContext('2d').globalAlpha = 0.4;
-                context = canvas.getContext('2d');
-                //使用分层设色渲染
-                // kriging.plot(canvas, grid,
-                //     [extent[0], extent[2]], [extent[1], extent[3]], params.colors);
-               
-                if(task){ // 第一次初始化
-                    co = new Psdb.Contour(context, 1620, 900);
-                }
-                task = false;
-                co.refreshMap(mode);
-                return canvas;
-            },
-            projection: 'EPSG:4326'
-        })
-    })
-    //向map添加图层
-    olMap.addLayer(canvasLayer);
 
     function AjaxGET() {
         $.ajax({
@@ -116,13 +80,10 @@
         });
     }
 
-
-    // var canvas = document.querySelector("canvas"),
-    //     width = 960,
-    //     height = 500,
-    //     context = canvas.getContext("2d");
-
-    var context = null
+    var canvas = document.querySelector("canvas"),
+        width = 1620, // 960
+        height = 900, // 500
+        context = canvas.getContext("2d");
 
     var mode = {};
 
@@ -131,12 +92,12 @@
     mode.contour_isfull = false;
     mode.drawpoint = false;
     mode.drawlable = false;
-    mode.referenceValue = 85;
+    mode.referenceValue = 90;
     mode.mapAlpha = 0.4;
     mode.mapThresholds = 10;
 
 
-    // var co = new Psdb.Contour(context, width, height);
+    var co = new Psdb.Contour(context, width, height);
 
     // GUI
     var gui = new dat.GUI();
@@ -172,16 +133,15 @@
 
 
     // //生成随机数据
-    // var data = [];
-    // for (var i = 0; i < 30; i++) {
+    // var data =[];
+    // for(var i = 0;i<2000;i++){
     //     data.push({
-    //         x: Math.round(Math.abs(d3.randomNormal(0, width)())),
-    //         y: Math.round(Math.abs(d3.randomNormal(0, height)())),
-    //         value: Math.random() * 10
+    //         x      :Math.round(Math.abs(d3.randomNormal(0,width)())),
+    //         y      :Math.round(Math.abs(d3.randomNormal(0,height)())),
+    //         value  :Math.random() * 10
     //     });
     // };
-    // console.log(data)
-    // co.initMap(mode, data);
+    // co.initMap(mode,data);
 
 
 
