@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+
+<head>
+    <meta charset="UTF-8">
+    <title>contour</title>
+    <link href="./lib/openlayer/ol.css" rel="stylesheet" />
+    <style>
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+
+
+<body>
+    <div id="map"></div>
+
+</body>
+<script src="lib/jqure1.7.min.js"></script>
+<script src="lib/d3.v4.min.js"></script>
+<script src="lib/d3-contour.v1.min.js"></script>
+<script src="lib/dat.gui.min.js"></script>
+<script src="lib/openlayer/ol-debug.js"></script>
+<script src="js/contour.js"></script>
+<script>
+
+    var mode = {};
+
+    mode.mapType = 'contour';
+    mode.heatmap_line = true;
+    mode.contour_isfull = true;
+    mode.drawpoint = false;
+    mode.drawlable = false;
+    mode.referenceValue = 85;
+    mode.mapAlpha = 0.1;
+    mode.mapThresholds = 10;
+
+    // GUI
+    var gui = new dat.GUI();
+
+    // 下拉框形式选择文案
+
+    gui.add(mode, 'mapType', ['heatmap', 'contour']).onChange(function () {
+        co.refreshMap(mode);
+    });
+
+    gui.add(mode, 'heatmap_line').onChange(function () {
+        co.refreshMap(mode);
+    });
+    gui.add(mode, 'contour_isfull').onChange(function () {
+        co.refreshMap(mode);
+    });
+
+    gui.add(mode, 'drawpoint').onChange(function () {
+        co.refreshMap(mode);
+    });
+    gui.add(mode, 'drawlable').onChange(function () {
+        co.refreshMap(mode);
+    });
+
+    gui.add(mode, 'referenceValue', 70, 100).onChange(function () {
+        co.refreshMap(mode);
+    });
+    gui.add(mode, 'mapAlpha', 0.1, 1.0).onChange(function () {
+        co.refreshMap(mode);
+    });
+    gui.add(mode, 'mapThresholds', 5, 20).onChange(function () {
+        co.refreshMap(mode);
+    });
+
+
+
+
+
+
+
+    function AjaxGET() {
+        $.ajax({
+            type: "get",
+            url: "../data/getLatest.json",
+            dataType: "json",
+            success: function (json) {
+                var originData = json.data;
+                console.log(originData)
+                OlMapInit(originData)
+            }
+        });
+    }
+
+    AjaxGET();
+
+
+    var olMap;
+    var context = null;
+    var co;
+    function OlMapInit(_data) {
+        // 创建底图
+        var baseLayer = new ol.layer.Tile({
+            title: "base",
+            source: new ol.source.OSM()
+        });
+        //创建canvas图层
+        var canvasLayer = new ol.layer.Image({
+            source: new ol.source.ImageCanvas({
+                canvasFunction: (extent, resolution, pixelRatio, size, projection) => {
+                    console.log(extent);
+                    let canvas = document.createElement('canvas');
+                    canvas.width = size[0];
+                    canvas.height = size[1];
+                    // canvas.width = 600;
+                    // canvas.height = 500;
+                    canvas.style.display = 'block';
+                    canvas.getContext('2d').globalAlpha = 0.1;
+                    context = canvas.getContext('2d');
+                    // 计算在extent范围内的数据 重新在画布上绘制
+                    // if(co){
+                    //     co = new Psdb.Contour(context, 600, 500);
+                    //     // co.initMap(mode, pxData);
+                    //     co.refreshMap(mode);
+                    // }
+                    var pxData = []
+                    for (var i = 0; i < _data.length; i++) {
+                        var px = olMap.getPixelFromCoordinate([_data[i].lon, _data[i].lat]);
+                        pxData.push({
+                            x: px[0],
+                            y: px[1],
+                            value: _data[i].AQI
+                        })
+                    }
+                    console.log(pxData)
+                    co = new Psdb.Contour(context, 1200, 800);
+                    co.initMap(mode, pxData);
+                    return canvas;
+                },
+                projection: 'EPSG:4326'
+            })
+        })
+        olMap = new ol.Map({
+            target: 'map',
+            layers: [baseLayer, canvasLayer],
+            view: new ol.View({
+                center: [115.96481323242188, 36.43890380859375], // [119.3440771484375, 35.3784501953125]  [115.79, 36.142]
+                projection: 'EPSG:4326',
+                zoom: 8
+            })
+        });
+
+        olMap.on('click', (evt) => {
+            console.log(evt)
+            const px = olMap.getPixelFromCoordinate(evt.coordinate);
+        })
+    }
+
+
+
+</script>
+
+</html>
