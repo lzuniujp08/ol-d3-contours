@@ -67,7 +67,7 @@ var Psdb = window.Psdb = Psdb || {};
         };
 
         //清屏
-        context.clearRect(0,0,this.width,this.height);
+        this.context.clearRect(0,0,this.width,this.height);
 
         //绘制热图
         if(me.mode.mapType === "heatmap"){

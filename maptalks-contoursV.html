@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layer - CanvasLayer: an example</title>
+<style type="text/css">
+    html,
+    body {
+        margin: 0px;
+        height: 100%;
+        width: 100%
+    }
+
+    .container {
+        width: 100%;
+        height: 100%
+    }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.css">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.min.js"></script>
+<script src="lib/jqure1.7.min.js"></script>
+<script src="lib/d3.v4.min.js"></script>
+<script src="lib/d3-contour.v1.min.js"></script>
+<script src="lib/dat.gui.min.js"></script>
+<script src="js/contour.js"></script>
+
+<body>
+
+
+    <div id="map" class="container"></div>
+
+    <script>
+
+        function AjaxGET() {
+            $.ajax({
+                type: "get",
+                url: "../data/getLatest.json",
+                dataType: "json",
+                success: function (json) {
+                    var originData = json.data;
+                    console.log(originData)
+                    MapInit(originData)
+                }
+            });
+        }
+
+        AjaxGET();
+        var canvasLayer, layer;
+        var contours, d3Color, d3Path;
+        function MapInit(_data) {
+            var map = new maptalks.Map('map', {
+                center: [115.96481323242188, 36.43890380859375],
+                zoom: 8,
+                baseLayer: new maptalks.TileLayer('geoq', {
+                    style: 'normal',
+                    urlTemplate: 'http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineCommunity/MapServer/tile/{z}/{y}/{x}'
+                })
+            });
+
+            //定义裁剪边界
+            var coord = [[116.05883026123047, 36.88069534301758], [116.12857055664074, 36.88832473754883], [116.16789245605469, 36.936771392822266], [116.20486450195324, 36.9648323059082], [116.23371124267578, 37.02350616455084], [116.30213165283214, 36.98831558227545], [116.32343292236328, 36.970138549804744], [116.43280029296886, 36.96689605712896], [116.45199584960938, 36.956863403320256], [116.45880126953125, 36.934246063232536], [116.42424011230469, 36.897548675537166], [116.4191665649414, 36.87055206298834], [116.38722229003918, 36.796733856201286], [116.39975738525402, 36.76072311401367], [116.38756561279308, 36.731239318847656], [116.40126800537132, 36.70432662963873], [116.40677642822266, 36.6568336486817], [116.39505004882824, 36.52444839477545], [116.44647979736351, 36.493713378906364], [116.45575714111328, 36.44969940185541], [116.49484252929688, 36.44376754760748], [116.54493713378918, 36.40079116821289], [116.50951385498047, 36.377944946289176], [116.47891998291027, 36.33679962158203], [116.44329071044933, 36.336921691894645], [116.32552337646484, 36.290496826171875], [116.27454376220703, 36.2218589782716], [116.20741271972656, 36.169773101806754], [116.16371154785156, 36.1711540222168], [116.15852355957043, 36.14592742919922], [116.1110076904298, 36.12730026245117], [116.09490203857422, 36.1111297607423], [116.05631256103516, 36.104995727539176], [116.01735687255871, 36.06333923339844], [115.92543792724621, 36.02585220336914], [115.89026641845703, 36.0249404907226], [115.85330963134777, 36.0066299438476], [115.80311584472656, 36.01005172729498], [115.74849700927734, 35.97412109375006], [115.68595886230469, 35.96349334716808], [115.65953826904308, 35.93789672851568], [115.64204406738281, 35.92935180664074], [115.58512115478538, 35.92505645751953], [115.5428695678711, 35.89764404296881], [115.50706481933594, 35.89407730102545], [115.44414520263672, 35.86289215087896], [115.39887237548828, 35.81025314331066], [115.35540771484375, 35.784446716308594], [115.33479309082031, 35.80162811279297], [115.33245086669933, 35.86394882202154], [115.36087036132824, 35.90924835205084], [115.34718322753906, 35.94689178466808], [115.35207366943371, 35.97102355957031], [115.43162536621105, 36.00341796875], [115.44813537597656, 36.075164794921875], [115.48091888427734, 36.126602172851506], [115.47286987304688, 36.16936111450207], [115.47711181640625, 36.2026824951173], [115.46441650390636, 36.257820129394474], [115.4229507446289, 36.28858184814453], [115.40888214111351, 36.32630920410156], [115.36056518554688, 36.308712005615234], [115.36262512207031, 36.342380523681754], [115.34253692626964, 36.38442230224621], [115.29388427734386, 36.41213226318354], [115.30603790283203, 36.43793106079113], [115.28143310546875, 36.47678756713873], [115.29291534423851, 36.520103454589844], [115.32230377197277, 36.54581069946295], [115.33660125732433, 36.61305999755865], [115.36998748779308, 36.63021469116222], [115.41259002685547, 36.683006286621094], [115.4307861328125, 36.68991088867193], [115.4688491821289, 36.74204254150402], [115.48047637939464, 36.76197052001953], [115.58241271972656, 36.779426574707145], [115.68394470214855, 36.81945800781256], [115.7004165649414, 36.87666702270502], [115.75374603271496, 36.915134429931754], [115.77561950683594, 36.909465789794865], [115.8946304321289, 36.905590057373104], [115.91487121582031, 36.89275741577154], [116.05883026123047, 36.88069534301758]];
+            var polygon = new maptalks.Polygon(coord);
+
+            var poly = new maptalks.Polygon(coord);
+            // var layer = new maptalks.VectorLayer('v',poly).addTo(map);
+
+            canvasLayer = new maptalks.CanvasLayer('c', {
+                'forceRenderOnMoving': true,
+                'forceRenderOnZooming': true
+            }).addTo(map);
+
+            canvasLayer.setMask(polygon)
+
+
+            canvasLayer.prepareToDraw = function (/* context */) {
+                return [];
+            };
+
+            //draw when map is interacting
+            canvasLayer.drawOnInteracting = function (context, view) {
+                this.draw(context, view);
+            };
+
+            // param1 and param2 are prepareToDraw's return values.
+            canvasLayer.draw = function (context, view) {
+                var size = map.getSize();
+                // get mask ContainerExtent
+                var CE = canvasLayer.getMask().getContainerExtent()
+                context.canvas.clientTop = CE.pymin;
+                context.canvas.clientLeft = CE.pxmin;
+                context.canvas.offsetTop = CE.pymin;
+                context.canvas.offsetLeft = CE.pxmin;
+                context.canvas.style.top = CE.pymin;
+                context.canvas.style.left = CE.pxmin;
+                // var CE = poly.getContainerExtent()
+                var width = Math.ceil(CE.pxmax - CE.pxmin);
+                var height = Math.ceil(CE.pymax - CE.pymin);
+
+                // coordinate to containpoint and manage data
+                var pxData = []
+                for (var i = 0; i < _data.length; i++) {
+                    if (_data[i].lon && _data[i].lat) {
+                        var p = map.coordinateToContainerPoint(new maptalks.Coordinate([_data[i].lon, _data[i].lat]));
+                        pxData.push({
+                            x: p.x,
+                            y: p.y,
+                            value: _data[i].AQI
+                        })
+                    }
+
+                }
+
+                // Math.ceil(CE.pxmax - CE.pxmin), Math.ceil(CE.pymax - CE.pymin)
+                contours = d3.contours().size([Math.ceil(CE.pxmax - CE.pxmin), Math.ceil(CE.pymax - CE.pymin)]); //等高线绘图实例
+                d3Color = d3.scaleLinear().domain([1, 10]).range(["green", "red"]);
+                d3Path = d3.geoPath(null, context);  //绘图笔
+
+                var mdata = maptalksIDW(pxData, width, height)
+
+                context.clearRect(0, 0, width, height);
+
+                context.globalAlpha = 0.1; //设置透明度
+                context.lineWidth = 1; //线条宽度
+
+                //绘图登高线图
+                contours
+                    .thresholds(10)
+                    (mdata)
+                    .forEach(fill);
+
+                //绘图一条等高线
+                function fill(geometry) {
+                    context.beginPath();
+                    d3Path(geometry);
+                    var acolor = getColor(geometry.value);
+
+                    //等高线梯度着色
+                    context.fillStyle = acolor;
+                    context.fill();
+
+                    //等高线线条
+                    context.strokeStyle = acolor;
+                    context.stroke();
+                }
+
+                this.completeRender();
+            };
+        }
+
+        function maptalksIDW(data, width, height) {
+            var s = new Date().getTime();
+            // this.imapData = this.idw(this.mapData, this.width, this.height);
+            // this.newData[i] = this.imapData[i] - this.mode.referenceValue;
+            var d = data;
+
+            //已有点初始二维数组
+            var dlen = d.length;
+            var matrixData = new Array(width * height);
+            for (var i = 0; i < dlen; i++) {
+                var point = d[i];
+                matrixData[point.y * width + point.x] = point.value;
+            }
+
+            /**
+             * 插值矩阵数据,时间复杂度O(height*width*len)
+             * 当height = 356, width = 673, len = 26时为6229288
+             */
+            var idwcount = 0
+            for (var i = 0, k1 = 0; i < height; i++) {
+                for (var j = 0; j < width; j++ , k1++) {
+                    if (!matrixData[k1]) {
+                        var sum0 = 0, sum1 = 0;
+                        for (var k = 0; k < dlen; k++) {
+                            var dk = d[k];
+                            if ((i - dk.y) < 850 && (j - dk.x) < 850) {
+                                var dis = ((i - dk.y) * (i - dk.y) + (j - dk.x) * (j - dk.x));
+                                sum0 = sum0 + dk.value * 1 / dis;
+                                sum1 = sum1 + 1 / dis;
+                            }
+                            idwcount++
+                        }
+                        if (sum1 != 0)
+                            matrixData[k1] = sum0 / sum1 - 85;
+                        else
+                            matrixData[k1] = 1;
+                    }
+                }
+            }
+            console.log(idwcount)
+            var e = new Date().getTime();
+            console.log('插值：' + (e - s) / 1000 + '秒');
+            return matrixData;
+        }
+
+        function getColor(fThisValue) {
+            var task = false;
+            if (task) {//自定义颜色
+                var rgb = getRGB(fThisValue);
+                return d3.rgb(rgb[0], rgb[1], rgb[2]);
+            } else {
+                return d3.rgb(d3Color(fThisValue));
+            };
+        }
+
+        function getRGB(fThisValue) {
+            var fThisR = 0;
+            var fThisG = 0;
+            var fThisB = 0;
+
+            if (fThisValue < -0.2) {
+                fThisR = 0;
+                fThisG = 0;
+                fThisB = 0.5;
+            }
+            else if (fThisValue < -0.15) {
+                fThisR = 0;
+                fThisG = 0;
+                fThisB = 10 * (fThisValue + 0.25);
+            }
+            else if (fThisValue < -0.05) {
+                fThisR = 0;
+                fThisG = 10 * (fThisValue + 0.15);
+                fThisB = 1.0;
+            }
+            else if (fThisValue < 0.05) {
+                fThisR = 10 * (fThisValue + 0.05);
+                fThisG = 1.0;
+                fThisB = -10 * (fThisValue - 0.05);
+            }
+            else if (fThisValue < 0.15) {
+                fThisR = 1.0;
+                fThisG = -10 * (fThisValue - 0.15);
+                fThisB = 0;
+            }
+            else if (fThisValue < 0.2) {
+                fThisR = -10 * (fThisValue - 0.25);
+                fThisG = 0;
+                fThisB = 0;
+            }
+            else {
+                fThisR = 0.5;
+                fThisG = 0;
+                fThisB = 0;
+            }
+
+            var colorV = [];
+            colorV[0] = Math.round(fThisR * 255);
+            colorV[1] = Math.round(fThisG * 255);
+            colorV[2] = Math.round(fThisB * 255);
+            return colorV;
+        }
+
+
+    </script>
+</body>
+
+</html>
