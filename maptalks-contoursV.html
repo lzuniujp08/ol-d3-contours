@@ -173,6 +173,8 @@
 
             /**
              * 插值矩阵数据,时间复杂度O(height*width*len)
+             * 从左上角开始计算，起点相当于mask的xmin,ymin [0,0]
+             * todo 偏移计算canvas
              */
             var idwcount = 0
             for (var i = 0, k1 = 0; i < height; i++) {
