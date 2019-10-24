@@ -46,7 +46,7 @@
 
         AjaxGET();
         var canvasLayer, layer;
-        var contours, d3Color, d3Path;
+        var contours, d3Path;
         function MapInit(_data) {
             var map = new maptalks.Map('map', {
                 center: [115.96481323242188, 36.43890380859375],
@@ -86,108 +86,100 @@
                 var size = map.getSize();
                 // get mask ContainerExtent
                 var CE = canvasLayer.getMask().getContainerExtent()
-                context.canvas.clientTop = CE.pymin;
-                context.canvas.clientLeft = CE.pxmin;
-                context.canvas.offsetTop = CE.pymin;
-                context.canvas.offsetLeft = CE.pxmin;
-                context.canvas.style.top = CE.pymin;
-                context.canvas.style.left = CE.pxmin;
+                CE.pxmax = Math.ceil(CE.pxmax);
+                CE.pxmin = Math.ceil(CE.pxmin);
+                CE.pymax = Math.ceil(CE.pymax);
+                CE.pymin = Math.ceil(CE.pymin);
                 // var CE = poly.getContainerExtent()
-                var width = Math.ceil(CE.pxmax - CE.pxmin);
-                var height = Math.ceil(CE.pymax - CE.pymin);
-
+                // var width = Math.ceil(CE.pxmax - CE.pxmin);
+                // var height = Math.ceil(CE.pymax - CE.pymin);
+                var width = size.width;
+                var height = size.height;
                 // coordinate to containpoint and manage data
                 var pxData = []
                 for (var i = 0; i < _data.length; i++) {
                     if (_data[i].lon && _data[i].lat) {
                         var p = map.coordinateToContainerPoint(new maptalks.Coordinate([_data[i].lon, _data[i].lat]));
                         pxData.push({
-                            x: p.x,
-                            y: p.y,
+                            x: Math.ceil(p.x),
+                            y: Math.ceil(p.y),
                             value: _data[i].AQI
                         })
                     }
-
                 }
-
+                var _canvas = document.createElement('canvas');
+                _canvas.width = CE.pxmax;
+                _canvas.height = CE.pymax;
+                var _contenxt = _canvas.getContext('2d');
+                _contenxt.lineWidth = 2; //线条宽度
                 // Math.ceil(CE.pxmax - CE.pxmin), Math.ceil(CE.pymax - CE.pymin)
-                contours = d3.contours().size([Math.ceil(CE.pxmax - CE.pxmin), Math.ceil(CE.pymax - CE.pymin)]); //等高线绘图实例
-                d3Color = d3.scaleLinear().domain([1, 10]).range(["green", "red"]);
-                d3Path = d3.geoPath(null, context);  //绘图笔
-
-                var mdata = maptalksIDW(pxData, width, height)
-
-                context.clearRect(0, 0, width, height);
-
-                context.globalAlpha = 0.3; //设置透明度
-                context.lineWidth = 2; //线条宽度
-
+                contours = d3.contours().size([CE.pxmax, CE.pymax]); //等高线绘图实例
+                d3Path = d3.geoPath(null, _contenxt);  //绘图笔
+                var mdata = maptalksIDW(pxData, CE)
                 var colors = [
-                    { min: 0, max: 50, color: [0,229,0] },
-                    { min: 50, max: 100, color: [255,255,0] },
-                    { min: 100, max: 150, color: [255,126,0] },
-                    { min: 150, max: 200, color: [254,0,0] },
-                    { min: 200, max: 250, color: [152,0,75] },
-                    { min: 250, max: 300, color: [126,1,35] },
+                    { min: 0, max: 50, color: [0, 229, 0] },
+                    { min: 50, max: 100, color: [255, 255, 0] },
+                    { min: 100, max: 150, color: [255, 126, 0] },
+                    { min: 150, max: 200, color: [254, 0, 0] },
+                    { min: 200, max: 250, color: [152, 0, 75] },
+                    { min: 250, max: 300, color: [126, 1, 35] },
                 ]
-
                 //绘图登高线图
                 contours
                     .thresholds(10)
                     (mdata)
                     .forEach(fill);
-
                 //绘图一条等高线
                 function fill(geometry) {
-                    context.beginPath();
+                    _contenxt.beginPath();
                     d3Path(geometry);
                     console.log(geometry.value)
                     var acolor = getColor(colors, geometry.value);
 
                     //等高线梯度着色
-                    context.fillStyle = acolor;
-                    context.fill();
+                    _contenxt.fillStyle = acolor;
+                    _contenxt.fill();
 
                     //等高线线条
-                    context.strokeStyle = acolor;
-                    context.stroke();
+                    _contenxt.strokeStyle = acolor;
+                    _contenxt.stroke();
                 }
-
+                context.clearRect(0, 0, width, height);
+                context.globalAlpha = 0.3; //设置透明度
+                context.drawImage(_canvas, 0, 0, width, height);
                 this.completeRender();
             };
-            
+
         }
 
-        function maptalksIDW(data, width, height) {
+        function maptalksIDW(data, extext) {
             var s = new Date().getTime();
-            // this.imapData = this.idw(this.mapData, this.width, this.height);
-            // this.newData[i] = this.imapData[i] - this.mode.referenceValue;
             var d = data;
-
             //已有点初始二维数组
+            var width = Math.ceil(extext.pxmax - extext.pxmin);
+            var height = Math.ceil(extext.pymax - extext.pymin);
             var dlen = d.length;
-            var matrixData = new Array(width * height);
-            // for (var i = 0; i < dlen; i++) {
-            //     var point = d[i];
-            //     matrixData[point.y * width + point.x] = point.value;
-            // }
+            var colx = extext.pxmax;
+            var coly = extext.pymax;
+            var matrixDataLen = colx * coly;
+            var matrixData = new Array(matrixDataLen);
+            var _s = new Date().getTime();
+            for (var i = 0; i < dlen; i++) {
+                var point = d[i];
+                matrixData[point.y * width + point.x] = point.value;
+            }
+            var _e = new Date().getTime();
+            console.log('测试' + (_e - _s) / 1000 + '秒');
 
-            /**
-             * 插值矩阵数据,时间复杂度O(height*width*len)
-             */
             var idwcount = 0
-            for (var i = 0, k1 = 0; i < height; i++) {
-                for (var j = 0; j < width; j++ , k1++) {
-                    if (!matrixData[k1]) {
+            var origin = extext.pxmin * extext.pymin;
+            for (var i = 0, k1 = 0; i < extext.pymax; i++) {
+                for (var j = 0; j < extext.pxmax; j++ , k1++) {
+
+                    if (!matrixData[i * j + k1]) {
                         var sum0 = 0, sum1 = 0;
                         for (var k = 0; k < dlen; k++) {
                             var dk = d[k];
-                            // 现在不需要 之前目的是避免浪费计算
-                            // if ((i - dk.y) < 850 && (j - dk.x) < 850) {
-                            //     var dis = ((i - dk.y) * (i - dk.y) + (j - dk.x) * (j - dk.x));
-                            //     sum0 = sum0 + dk.value * 1 / dis;
-                            //     sum1 = sum1 + 1 / dis;
-                            // }
                             var dis = ((i - dk.y) * (i - dk.y) + (j - dk.x) * (j - dk.x));
                             sum0 = sum0 + dk.value * 1 / dis;
                             sum1 = sum1 + 1 / dis;
@@ -199,24 +191,100 @@
                         else
                             matrixData[k1] = 1;
                     }
+                    // if (i < extext.pymin || j < extext.pxmin) {//不在区域不做计算
+                    //     matrixData[k1] = 1
+                    // } else {
+                    //     if (!matrixData[i * j + k1]) {
+                    //         var sum0 = 0, sum1 = 0;
+                    //         for (var k = 0; k < dlen; k++) {
+                    //             var dk = d[k];
+                    //             var dis = ((i - dk.y) * (i - dk.y) + (j - dk.x) * (j - dk.x));
+                    //             sum0 = sum0 + dk.value * 1 / dis;
+                    //             sum1 = sum1 + 1 / dis;
+                    //             idwcount++
+                    //         }
+                    //         if (sum1 != 0)
+                    //             //matrixData[k1] = sum0 / sum1 - referenceValue;
+                    //             matrixData[k1] = sum0 / sum1;
+                    //         else
+                    //             matrixData[k1] = 1;
+                    //     }
+                    // }
+
                 }
             }
             console.log(idwcount)
             var e = new Date().getTime();
             console.log('插值：' + (e - s) / 1000 + '秒');
+
+            /**
+             * 插值矩阵数据,时间复杂度O(height*width*len)
+             */
+            // var idwcount = 0
+            // for (var i = extext.pymin, k1 = 0; i < extext.pymax; i++) {
+            //     for (var j = extext.pxmin; j < extext.pxmax; j++ , k1++) {
+            //         if (!matrixData[i * j + k1]) {
+            //             var sum0 = 0, sum1 = 0;
+            //             for (var k = 0; k < dlen; k++) {
+            //                 var dk = d[k];
+            //                 var dis = ((i - dk.y) * (i - dk.y) + (j - dk.x) * (j - dk.x));
+            //                 sum0 = sum0 + dk.value * 1 / dis;
+            //                 sum1 = sum1 + 1 / dis;
+            //                 idwcount++
+            //             }
+            //             if (sum1 != 0)
+            //                 //matrixData[k1] = sum0 / sum1 - referenceValue;
+            //                 matrixData[i * j + k1] = sum0 / sum1;
+            //             else
+            //                 matrixData[i * j + k1] = 1;
+            //         }
+            //     }
+            // }
+            // console.log(idwcount)
+            // var e = new Date().getTime();
+            // console.log('插值：' + (e - s) / 1000 + '秒');
+
+
             return matrixData;
         }
 
+        // function maptalksIDW(data, width, height) {
+        //     var s = new Date().getTime();
+        //     // this.imapData = this.idw(this.mapData, this.width, this.height);
+        //     // this.newData[i] = this.imapData[i] - this.mode.referenceValue;
+        //     var d = data;
 
+        //     //已有点初始二维数组
+        //     var dlen = d.length;
+        //     var matrixData = new Array(width * height);
 
-        // function getColor(fThisValue) {
-        //     var task = false;
-        //     if (task) {//自定义颜色
-        //         var rgb = getRGB(fThisValue);
-        //         return d3.rgb(rgb[0], rgb[1], rgb[2]);
-        //     } else {
-        //         return d3.rgb(d3Color(fThisValue));
-        //     };
+        //     /**
+        //      * 插值矩阵数据,时间复杂度O(height*width*len)
+        //      */
+        //     var idwcount = 0
+        //     for (var i = 0, k1 = 0; i < height; i++) {
+        //         for (var j = 0; j < width; j++ , k1++) {
+        //             if (!matrixData[k1]) {
+        //                 var sum0 = 0, sum1 = 0;
+        //                 for (var k = 0; k < dlen; k++) {
+        //                     var dk = d[k];
+        //                     var dis = ((i - dk.y) * (i - dk.y) + (j - dk.x) * (j - dk.x));
+        //                     sum0 = sum0 + dk.value * 1 / dis;
+        //                     sum1 = sum1 + 1 / dis;
+        //                     idwcount++
+        //                 }
+        //                 if (sum1 != 0)
+        //                     //matrixData[k1] = sum0 / sum1 - referenceValue;
+        //                     matrixData[k1] = sum0 / sum1;
+        //                 else
+        //                     matrixData[k1] = 1;
+        //             }
+        //         }
+        //     }
+        //     console.log(idwcount)
+        //     var e = new Date().getTime();
+        //     console.log('插值：' + (e - s) / 1000 + '秒');
+        //     return matrixData;
         // }
 
 
@@ -225,55 +293,6 @@
             for (var i = 0; i < len; i++) {
                 if (value > colors[i].min && value <= colors[i].max) return d3.rgb(colors[i].color[0], colors[i].color[1], colors[i].color[2]);
             }
-        }
-
-
-        function getRGB(fThisValue) {
-            var fThisR = 0;
-            var fThisG = 0;
-            var fThisB = 0;
-
-            if (fThisValue < -0.2) {
-                fThisR = 0;
-                fThisG = 0;
-                fThisB = 0.5;
-            }
-            else if (fThisValue < -0.15) {
-                fThisR = 0;
-                fThisG = 0;
-                fThisB = 10 * (fThisValue + 0.25);
-            }
-            else if (fThisValue < -0.05) {
-                fThisR = 0;
-                fThisG = 10 * (fThisValue + 0.15);
-                fThisB = 1.0;
-            }
-            else if (fThisValue < 0.05) {
-                fThisR = 10 * (fThisValue + 0.05);
-                fThisG = 1.0;
-                fThisB = -10 * (fThisValue - 0.05);
-            }
-            else if (fThisValue < 0.15) {
-                fThisR = 1.0;
-                fThisG = -10 * (fThisValue - 0.15);
-                fThisB = 0;
-            }
-            else if (fThisValue < 0.2) {
-                fThisR = -10 * (fThisValue - 0.25);
-                fThisG = 0;
-                fThisB = 0;
-            }
-            else {
-                fThisR = 0.5;
-                fThisG = 0;
-                fThisB = 0;
-            }
-
-            var colorV = [];
-            colorV[0] = Math.round(fThisR * 255);
-            colorV[1] = Math.round(fThisG * 255);
-            colorV[2] = Math.round(fThisB * 255);
-            return colorV;
         }
 
 

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+
+<head>
+    <meta charset="UTF-8">
+    <title>contour</title>
+    <link href="./lib/openlayer/ol.css" rel="stylesheet" />
+    <style>
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        #contour {
+            position: absolute;
+            z-index: 999;
+            top: 0px;
+            left: 0px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+
+</body>
+<script src="lib/jqure1.7.min.js"></script>
+<script src="lib/d3.v4.min.js"></script>
+<script src="lib/d3-contour.v1.min.js"></script>
+<script src="lib/dat.gui.min.js"></script>
+<script src="lib/openlayer/ol-debug.js"></script>
+<script src="js/contour2.js"></script>
+<script>
+
+    // Extend the Array class
+    Array.prototype.max = function () {
+        return Math.max.apply(null, this);
+    };
+    Array.prototype.min = function () {
+        return Math.min.apply(null, this);
+    };
+
+    var mode = {};
+
+    mode.dataLoad = false;
+    mode.mapType = 'contour';
+    mode.heatmap_line = true;
+    mode.contour_isfull = true;
+    mode.drawpoint = false;
+    mode.drawlable = false;
+    mode.referenceValue = 85;
+    mode.mapAlpha = 0.4;
+    mode.mapThresholds = 10;
+    // GUI
+    var gui = new dat.GUI();
+
+    // 下拉框形式选择文案
+    gui.add(mode, 'dataLoad').onChange(function () {
+        if (!originData) {
+            AjaxGET()
+        }
+    });
+    gui.add(mode, 'mapType', ['heatmap', 'contour']).onChange(function () {
+
+    });
+
+    gui.add(mode, 'heatmap_line').onChange(function () {
+    });
+    gui.add(mode, 'contour_isfull').onChange(function () {
+    });
+
+    gui.add(mode, 'drawpoint').onChange(function () {
+    });
+    gui.add(mode, 'drawlable').onChange(function () {
+    });
+
+    gui.add(mode, 'referenceValue', 70, 100).onChange(function () {
+    });
+    gui.add(mode, 'mapAlpha', 0.1, 1.0).onChange(function () {
+    });
+    gui.add(mode, 'mapThresholds', 5, 20).onChange(function () {
+    });
+
+    var originData;
+    function AjaxGET() {
+        $.ajax({
+            type: "get",
+            url: "../data/getLatest.json",
+            dataType: "json",
+            success: function (json) {
+                var originData = json.data;
+                console.log(originData);
+                CanvasLayerInit(originData);
+            }
+        });
+    }
+
+
+    let baseLayer = new ol.layer.Tile({
+        title: "base",
+        source: new ol.source.OSM()
+    });
+    var map = new ol.Map({
+        target: 'map',
+        layers: [baseLayer],
+        view: new ol.View({
+            center: [115.79, 36.142],
+            projection: 'EPSG:4326',
+            zoom: 8
+        })
+    });
+
+    map.on('click', (evt) => {
+        console.log(evt)
+        const px = map.getPixelFromCoordinate(evt.coordinate);
+    })
+    var contours, d3Path;
+    function CanvasLayerInit(_data) {
+        var canvasLayer = new ol.layer.Image({
+            source: new ol.source.ImageCanvas({
+                canvasFunction: (extent, resolution, pixelRatio, size, projection) => {
+                    const [width, height] = size;
+                    const [left, bottom, right, top] = extent;
+                    const xscale = width / (right - left);
+                    const yscale = height / (top - bottom);
+
+                    let canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    canvas.style.display = 'block';
+                    //设置canvas透明度
+                    canvas.getContext('2d').globalAlpha = 0.4;
+                    context = canvas.getContext('2d');
+                    var pdata = manageData(_data, xscale, yscale, top, left);
+                    var idwdata = olIDW(pdata.data, Math.ceil(pdata.width), Math.ceil(pdata.height));
+                    contours = d3.contours().size([width, height]); //等高线绘图实例
+                    d3Path = d3.geoPath(null, context);  //绘图笔
+                    context.clearRect(0, 0, width, height);
+
+                    context.globalAlpha = 0.3; //设置透明度
+                    context.lineWidth = 2; //线条宽度
+
+                    var colors = [
+                        { min: 0, max: 50, color: [0, 229, 0] },
+                        { min: 50, max: 100, color: [255, 255, 0] },
+                        { min: 100, max: 150, color: [255, 126, 0] },
+                        { min: 150, max: 200, color: [254, 0, 0] },
+                        { min: 200, max: 250, color: [152, 0, 75] },
+                        { min: 250, max: 300, color: [126, 1, 35] },
+                    ]
+
+                    //绘图登高线图
+                    contours
+                        .thresholds(10)
+                        (idwdata)
+                        .forEach(fill);
+
+                    //绘图一条等高线
+                    function fill(geometry) {
+                        context.beginPath();
+                        d3Path(geometry);
+                        console.log(geometry.value)
+                        var acolor = getColor(colors, geometry.value);
+
+                        //等高线梯度着色
+                        context.fillStyle = acolor;
+                        context.fill();
+
+                        //等高线线条
+                        context.strokeStyle = acolor;
+                        context.stroke();
+                    }
+                    return canvas;
+                },
+                projection: 'EPSG:4326'
+            })
+        })
+        //向map添加图层
+        map.addLayer(canvasLayer);
+    }
+
+    function manageData(data, xscale, yscale, top, left) {
+        var _data = [];
+        var xmax = 0;
+        var ymax = 0;
+        for (var i = 0; i < data.length; i++) {
+            var p = coordToPoint(data[i].lon, data[i].lat, xscale, yscale, top, left)
+            if (i === 0) {
+                xmax = p[0];
+                ymax = p[1];
+            }
+            xmax > p[0] ? null : xmax = p[0];
+            ymax > p[1] ? null : ymax = p[1];
+            _data.push({
+                x: p[0],
+                y: p[1],
+                value: data[i].AQI
+            })
+        }
+        return {
+            data: _data,
+            width: xmax,
+            height: ymax
+        }
+    }
+
+    function coordToPoint(x, y, xscale, yscale, top, left) {
+        var px = Math.abs(left - x) * xscale;
+        var py = Math.abs(top - y) * yscale;
+        return [px, py]
+
+    }
+
+    function olIDW(data, width, height) {
+        var s = new Date().getTime();
+        var d = data;
+
+        //已有点初始二维数组
+        var dlen = d.length;
+        var matrixData = new Array(width * height);
+        // for (var i = 0; i < dlen; i++) {
+        //     var point = d[i];
+        //     matrixData[point.y * width + point.x] = point.value;
+        // }
+
+        /**
+         * 插值矩阵数据,时间复杂度O(height*width*len)
+         */
+        var idwcount = 0
+        for (var i = 0, k1 = 0; i < height; i++) {
+            for (var j = 0; j < width; j++ , k1++) {
+                if (!matrixData[k1]) {
+                    var sum0 = 0, sum1 = 0;
+                    for (var k = 0; k < dlen; k++) {
+                        var dk = d[k];
+                        var dis = ((i - dk.y) * (i - dk.y) + (j - dk.x) * (j - dk.x));
+                        sum0 = sum0 + dk.value * 1 / dis;
+                        sum1 = sum1 + 1 / dis;
+                        idwcount++
+                    }
+                    if (sum1 != 0)
+                        //matrixData[k1] = sum0 / sum1 - referenceValue;
+                        matrixData[k1] = sum0 / sum1;
+                    else
+                        matrixData[k1] = 1;
+                }
+            }
+        }
+        console.log(idwcount)
+        var e = new Date().getTime();
+        console.log('插值：' + (e - s) / 1000 + '秒');
+        return matrixData;
+    }
+    function getColor(colors, value) {
+        var len = colors.length;
+        for (var i = 0; i < len; i++) {
+            if (value > colors[i].min && value <= colors[i].max) return d3.rgb(colors[i].color[0], colors[i].color[1], colors[i].color[2]);
+        }
+    }
+
+
+
+
+
+
+
+</script>
+
+</html>

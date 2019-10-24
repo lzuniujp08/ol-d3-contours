@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control and UIComponents - Geometry&#x27;s InfoWindow</title>
+<style type="text/css">
+    html,
+    body {
+        margin: 0px;
+        height: 100%;
+        width: 100%
+    }
+
+    .container {
+        width: 100%;
+        height: 100%
+    }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.css">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.min.js"></script>
+
+<body>
+
+    <div id="map" class="container"></div>
+    <script>
+
+        var map = new maptalks.Map('map', {
+            center: [115.96481323242188, 36.43890380859375],
+            zoom: 14,
+            baseLayer: new maptalks.TileLayer('geoq', {
+                style: 'normal',
+                urlTemplate: 'http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineCommunity/MapServer/tile/{z}/{y}/{x}'
+            })
+        });
+
+        var layer = new maptalks.VectorLayer('vector').addTo(map);
+        var marker = new maptalks.Marker([115.96481323242188, 36.43890380859375]).addTo(layer);
+        var marker2 = new maptalks.Marker([115.97481323242188, 36.44890380859375]).addTo(layer);
+
+        marker.setInfoWindow({
+            'title': 'Marker\'s InfoWindow',
+            'content': '1',
+            single: false
+            // 'autoPan': true,
+            // 'width': 300,
+            // 'minHeight': 120,
+            // 'custom': false,
+            // 'autoOpenOn' : 'click',  //set to null if not to open when clicking on marker
+            // 'autoCloseOn' : 'click'
+        });
+        marker.on('click', function (evt) {
+            var m = evt.target;
+            m.openInfoWindow();
+        })
+
+        marker2.setInfoWindow({
+            'title': 'Marker\'s InfoWindow',
+            'content': '2',
+            single: false
+
+            // 'autoPan': true,
+            // 'width': 300,
+            // 'minHeight': 120,
+            // 'custom': false,
+            // 'autoOpenOn' : 'click',  //set to null if not to open when clicking on marker
+            // 'autoCloseOn' : 'click'
+        });
+        marker2.on('click', function (evt) {
+            var m = evt.target;
+            m.openInfoWindow();
+        })
+
+
+
+        // var markerArr = []
+        // for (var i = 0; i < data.len; i++) {
+        //     var img = ''
+        //     switch (data.type) {
+        //         case 'hospital': img = '../img/png'; break
+        //     }
+        //     markerArr.push(
+        //         new maptalks.Marker([data[i].x, data[i].y], {
+        //             symbol: {
+        //                 markfill: img
+        //             },
+        //             properties: {
+        //                 type: data[i].type
+        //             }
+        //         }).on('click', function (e) {
+        //             var m = e.target;
+        //             var type = mgetProperties().type;
+        //             // todo 判断 然后写你的info
+        //             var info = new maptalks.UI.infowindow({
+        //                 // ...
+        //             })
+        //         })
+        //     )
+        // }
+
+
+
+    </script>
+</body>
+
+</html>
