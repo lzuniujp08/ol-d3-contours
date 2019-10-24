@@ -127,18 +127,22 @@
                     const xscale = width / (right - left);
                     const yscale = height / (top - bottom);
 
+
+                    var pdata = manageData(_data, xscale, yscale, top, left);
+                    var cw = Math.ceil(pdata.width)
+                    var ch = Math.ceil(pdata.height)
+
+                    var idwdata = olIDW(pdata.data, cw, ch);
                     let canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
+                    canvas.width = cw;
+                    canvas.height = ch;
                     canvas.style.display = 'block';
                     //设置canvas透明度
                     canvas.getContext('2d').globalAlpha = 0.4;
                     context = canvas.getContext('2d');
-                    var pdata = manageData(_data, xscale, yscale, top, left);
-                    var idwdata = olIDW(pdata.data, Math.ceil(pdata.width), Math.ceil(pdata.height));
-                    contours = d3.contours().size([width, height]); //等高线绘图实例
+                    contours = d3.contours().size([cw, ch]); //等高线绘图实例
                     d3Path = d3.geoPath(null, context);  //绘图笔
-                    context.clearRect(0, 0, width, height);
+                    context.clearRect(0, 0, cw, ch);
 
                     context.globalAlpha = 0.3; //设置透明度
                     context.lineWidth = 2; //线条宽度
