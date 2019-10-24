@@ -46,7 +46,7 @@
 
         AjaxGET();
         var canvasLayer, layer;
-        var contours, d3Color, d3Path;
+        var contours, d3Path;
         function MapInit(_data) {
             var map = new maptalks.Map('map', {
                 center: [115.96481323242188, 36.43890380859375],
@@ -112,7 +112,6 @@
 
                 // Math.ceil(CE.pxmax - CE.pxmin), Math.ceil(CE.pymax - CE.pymin)
                 contours = d3.contours().size([Math.ceil(CE.pxmax - CE.pxmin), Math.ceil(CE.pymax - CE.pymin)]); //等高线绘图实例
-                d3Color = d3.scaleLinear().domain([1, 10]).range(["green", "red"]);
                 d3Path = d3.geoPath(null, context);  //绘图笔
 
                 var mdata = maptalksIDW(pxData, width, height)
@@ -207,75 +206,12 @@
             return matrixData;
         }
 
-
-
-        // function getColor(fThisValue) {
-        //     var task = false;
-        //     if (task) {//自定义颜色
-        //         var rgb = getRGB(fThisValue);
-        //         return d3.rgb(rgb[0], rgb[1], rgb[2]);
-        //     } else {
-        //         return d3.rgb(d3Color(fThisValue));
-        //     };
-        // }
-
-
         function getColor(colors, value) {
             var len = colors.length;
             for (var i = 0; i < len; i++) {
                 if (value > colors[i].min && value <= colors[i].max) return d3.rgb(colors[i].color[0], colors[i].color[1], colors[i].color[2]);
             }
         }
-
-
-        function getRGB(fThisValue) {
-            var fThisR = 0;
-            var fThisG = 0;
-            var fThisB = 0;
-
-            if (fThisValue < -0.2) {
-                fThisR = 0;
-                fThisG = 0;
-                fThisB = 0.5;
-            }
-            else if (fThisValue < -0.15) {
-                fThisR = 0;
-                fThisG = 0;
-                fThisB = 10 * (fThisValue + 0.25);
-            }
-            else if (fThisValue < -0.05) {
-                fThisR = 0;
-                fThisG = 10 * (fThisValue + 0.15);
-                fThisB = 1.0;
-            }
-            else if (fThisValue < 0.05) {
-                fThisR = 10 * (fThisValue + 0.05);
-                fThisG = 1.0;
-                fThisB = -10 * (fThisValue - 0.05);
-            }
-            else if (fThisValue < 0.15) {
-                fThisR = 1.0;
-                fThisG = -10 * (fThisValue - 0.15);
-                fThisB = 0;
-            }
-            else if (fThisValue < 0.2) {
-                fThisR = -10 * (fThisValue - 0.25);
-                fThisG = 0;
-                fThisB = 0;
-            }
-            else {
-                fThisR = 0.5;
-                fThisG = 0;
-                fThisB = 0;
-            }
-
-            var colorV = [];
-            colorV[0] = Math.round(fThisR * 255);
-            colorV[1] = Math.round(fThisG * 255);
-            colorV[2] = Math.round(fThisB * 255);
-            return colorV;
-        }
-
 
     </script>
 </body>
