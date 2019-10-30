@@ -46,7 +46,7 @@
     /** 
     这是比较完整的ol-d3-contour版本
     TODO
-    1.zoom大时，PXregion异常
+    1.zoom大时，PXregion异常 | ok
     2.等值线添加label
     3.引入webworker 多线程计算
     4.idw插值算法优化的思路
@@ -225,14 +225,16 @@
                 xmax = p[0];
                 ymax = p[1];
             }
-            xmax > p[0] ? null : xmax = p[0];
-            ymax > p[1] ? null : ymax = p[1];
-            xmin < p[0] ? null : xmin = p[0];
-            ymin < p[1] ? null : ymin = p[1];
-            _data.push({
-                x: p[0],
-                y: p[1]
-            })
+            if (p[0] != 0 || p[1] != 0) {
+                xmax > p[0] ? null : xmax = p[0];
+                ymax > p[1] ? null : ymax = p[1];
+                xmin < p[0] ? null : xmin = p[0];
+                ymin < p[1] ? null : ymin = p[1];
+                _data.push({
+                    x: p[0],
+                    y: p[1]
+                })
+            }
         }
         return {
             data: _data,
@@ -255,15 +257,18 @@
                 xmax = p[0];
                 ymax = p[1];
             }
-            xmax > p[0] ? null : xmax = p[0];
-            ymax > p[1] ? null : ymax = p[1];
-            xmin < p[0] ? null : xmin = p[0];
-            ymin < p[1] ? null : ymin = p[1];
-            _data.push({
-                x: p[0],
-                y: p[1],
-                value: Number(data[i].AQI)
-            })
+            if (p[0] != 0 || p[1] != 0) {
+                xmax > p[0] ? null : xmax = p[0];
+                ymax > p[1] ? null : ymax = p[1];
+                xmin < p[0] ? null : xmin = p[0];
+                ymin < p[1] ? null : ymin = p[1];
+                _data.push({
+                    x: p[0],
+                    y: p[1],
+                    value: Number(data[i].AQI)
+                })
+            }
+
         }
         // value一定要确保是number类型，否则在插值计算的会先string转number再计算，影响效率
         return {
@@ -276,8 +281,12 @@
     }
 
     function coordToPoint(x, y, xscale, yscale, top, left) {
-        var px = Math.abs(left - x) * xscale;
-        var py = Math.abs(top - y) * yscale;
+        // var px = Math.abs(left - x) * xscale;
+        // var py = Math.abs(top - y) * yscale;
+        let px = (x - left) * xscale;
+        let py = (top - y) * yscale;
+        px > 0 ? null : px = 0;
+        py > 0 ? null : py = 0;
         return [px, py]
 
     }
