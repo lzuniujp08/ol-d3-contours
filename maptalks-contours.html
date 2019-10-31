@@ -94,7 +94,7 @@
         function AjaxGET() {
             $.ajax({
                 type: "get",
-                url: "../data/getLatest.json",
+                url: "../data/getLcAQI.json",
                 dataType: "json",
                 success: function (json) {
                     var originData = json.data;

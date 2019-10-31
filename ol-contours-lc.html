@@ -42,20 +42,6 @@
 <script src="lib/dat.gui.min.js"></script>
 <script src="lib/openlayer/ol-debug.js"></script>
 <script>
-    /** 
-    这是比较完整的ol-d3-contour版本
-    TODO
-    1.zoom大时，PXregion异常 | ok 左上角尚有小问题
-    2.等值线添加label
-    3.引入webworker 多线程计算 | 效果不明显，可能是方法的问题
-    4.idw插值算法优化的思路
-    （1）画布以（0，0）为起点 xmax => width, ymax => height | 这条好像行不通
-    1）直接在region的extent里计算
-    2）直接在region里插值计算（需要判断空间关系，范围内计算，范围外不计算）
-    （2）画布以（xmin, ymin) 为起点 xmax - xmin => width, ymax - ymin => height
-    3）region的extent(xmax - xmin, ymax - ymin)计算插值，然后canvas偏移至（xmin, ymin)
-    （3）基于idw算法函数优化
-    */
 
     var mode = {};
 
