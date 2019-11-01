@@ -44,7 +44,11 @@
 <script>
 
     /**
-     * 这是未idw计算函数优化后的版本，并且cnavas原点进行了偏移，全部数据1690，计算次数520543660，耗时1.4-2.2秒
+     * 1.这是未idw计算函数优化后的版本，
+     * 2.并且cnavas原点进行了偏移，
+     * 3.数组使用push的方式，详见https://www.jb51.net/article/61338.htm (但是实测效率提升不明显)
+     * 4.数组循环使用递减，最快1.1s
+     * 全部数据1690，计算次数520543660，耗时1.1-2.2秒
     */
 
     var mode = {};
@@ -462,6 +466,7 @@
         const y = top - (py / yscale);
         return [x, y];
     }
+    
     function coordToPoint(x, y, xscale, yscale, top, left) {
         // var px = Math.abs(left - x) * xscale;
         // var py = Math.abs(top - y) * yscale;
@@ -479,12 +484,7 @@
 
         //已有点初始二维数组
         var dlen = d.length;
-        // var matrixData = new Array(width * height);
         var matrixData = []
-        // for (var i = 0; i < dlen; i++) {
-        //     var point = d[i];
-        //     matrixData[Math.ceil(point.y * width + point.x)] = point.value;
-        // }
 
         /**
          * 插值矩阵数据,时间复杂度O(height*width*len)
@@ -492,23 +492,8 @@
         let idwcount = 0
         for (let i = 0, k1 = 0; i < height; i++) {
             for (let j = 0; j < width; j++ , k1++) {
-                // if (!matrixData[k1]) {
-                //     var sum0 = 0, sum1 = 0;
-                //     for (var k = 0; k < dlen; k++) {
-                //         var dk = d[k];
-                //         var dis = ((i - dk.y) * (i - dk.y) + (j - dk.x) * (j - dk.x));
-                //         sum0 = sum0 + dk.value * 1 / dis;
-                //         sum1 = sum1 + 1 / dis;
-                //         idwcount++
-                //     }
-                //     if (sum1 != 0)
-                //         //matrixData[k1] = sum0 / sum1 - referenceValue;
-                //         matrixData[k1] = sum0 / sum1;
-                //     else
-                //         matrixData[k1] = 1;
-                // }
                 let sum0 = 0, sum1 = 0;
-                for (let k = 0; k < dlen; k++) {
+                for (let k = dlen - 1; k >= 0; k--) {
                     const dk = d[k];
                     const dis = Math.pow((i - dk.y), 2) + Math.pow((j - dk.x), 2);
                     sum0 += dk.value / dis;
@@ -517,11 +502,9 @@
                 }
                 if (sum1 != 0)
                     //matrixData[k1] = sum0 / sum1 - referenceValue;
-                    matrixData[k1] = sum0 / sum1;
+                    matrixData.push(sum0 / sum1);
                 else
-                    matrixData[k1] = 1;
-
-
+                    matrixData.push(1);
             }
         }
         console.log(idwcount)

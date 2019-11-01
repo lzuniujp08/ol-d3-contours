@@ -137,15 +137,30 @@
                     const xscale = width / (right - left);
                     const yscale = height / (top - bottom);
 
-                    const pxdata = getPxData(_data, xscale, yscale, top, left);
+
                     const pxregion = getPxRegion(Regioncoord, xscale, yscale, top, left);
-                    const cw = Math.ceil(pxregion.xmax)
-                    const ch = Math.ceil(pxregion.ymax)
+                    const cw = Math.ceil(pxregion.xmax - pxregion.xmin)
+                    const ch = Math.ceil(pxregion.ymax - pxregion.ymin)
+
+                    const regionTopLeft = pointToCoord(pxregion.xmin, pxregion.ymin, xscale, yscale, top, left);
+                    const _left = regionTopLeft[0];
+                    const _top = regionTopLeft[1];
+
+                    const regionBottomRight = pointToCoord(pxregion.xmax, pxregion.ymax, xscale, yscale, top, left);
+                    const _right = regionBottomRight[0];
+                    const _bottom = regionBottomRight[1];
+
+                    // 这里是canvas分辨率
+                    const _xscale = cw / (_right - _left);
+                    const _yscale = ch / (_top - _bottom);
+
+
+                    const pxdata = getPxData(_data, _xscale, _yscale, _top, _left);
 
                     const idwdata = olIDW(pxdata.data, cw, ch);
                     let canvas = document.createElement('canvas');
-                    canvas.width = cw;
-                    canvas.height = ch;
+                    canvas.width = Math.ceil(pxregion.xmax);
+                    canvas.height = Math.ceil(pxregion.ymax);
                     canvas.style.display = 'block';
                     //设置canvas透明度
                     canvas.getContext('2d').globalAlpha = 0.1;
@@ -166,7 +181,8 @@
                     context.globalAlpha = 0.3; //设置透明度
                     context.lineWidth = 2; //线条宽度
 
-
+                    // 偏移
+                    context.translate(pxregion.xmin, pxregion.ymin);
 
                     //绘图登高线图
                     contours
@@ -266,6 +282,12 @@
         }
     }
 
+    function pointToCoord(px, py, xscale, yscale, top, left) {
+        const x = (px / xscale) + left;
+        const y = top - (py / yscale);
+        return [x, y];
+    }
+
     function coordToPoint(x, y, xscale, yscale, top, left) {
         // var px = Math.abs(left - x) * xscale;
         // var py = Math.abs(top - y) * yscale;
@@ -283,7 +305,7 @@
 
         //已有点初始二维数组
         var dlen = d.length;
-        var matrixData = new Array(width * height);
+        var matrixData = [];
         // for (var i = 0; i < dlen; i++) {
         //     var point = d[i];
         //     matrixData[point.y * width + point.x] = point.value;
@@ -297,18 +319,18 @@
             for (var j = 0; j < width; j++ , k1++) {
                 if (!matrixData[k1]) {
                     var sum0 = 0, sum1 = 0;
-                    for (var k = 0; k < dlen; k++) {
+                    for (var k = dlen - 1; k >= 0; k--) {
                         var dk = d[k];
-                        var dis = ((i - dk.y) * (i - dk.y) + (j - dk.x) * (j - dk.x));
-                        sum0 = sum0 + dk.value * 1 / dis;
-                        sum1 = sum1 + 1 / dis;
+                        var dis = Math.pow((i - dk.y), 2) + Math.pow((j - dk.x), 2);
+                        sum0 += dk.value / dis;
+                        sum1 += 1 / dis;
                         idwcount++
                     }
                     if (sum1 != 0)
                         //matrixData[k1] = sum0 / sum1 - referenceValue;
-                        matrixData[k1] = sum0 / sum1;
+                        matrixData.push(sum0 / sum1);
                     else
-                        matrixData[k1] = 1;
+                        matrixData.push(1);
                 }
             }
         }
