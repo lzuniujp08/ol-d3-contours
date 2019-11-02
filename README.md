@@ -30,7 +30,7 @@ ol集成d3-contour(通过canvaslayer叠加)
 * 主要分聊城AQI指数和广西的气温色斑图
 * 分好几个版本优化，代码里写了优化过程
 
-# vue-ol-contour[webpack使用示例](https://github.com/Liquid-Zhangliquan/d3-contour-map)
+# [vue-ol-contour](https://github.com/Liquid-Zhangliquan/d3-contour-map)
 * vue-cli3.0
 * ol6
 * d3-contour
