@@ -282,20 +282,6 @@
         { min: 40, color: '#6f0015' }
     ];
     var contours, d3Path;
-
-    var myWorker;
-    if (window.Worker) {
-        myWorker = new Worker("./js/worker.js");
-        myWorker.onmessage = function (e) {
-            console.log('Message received from worker');
-            contours
-                .thresholds(10)
-                (e.data)
-                .forEach(fill);
-        }
-    } else {
-        console.log('Your browser doesn\'t support web workers.')
-    }
     var context, contours, d3Path, cnavas;
     function CanvasLayerInit(_data) {
         var canvasLayer = new ol.layer.Image({

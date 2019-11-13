@@ -44,7 +44,11 @@
 <script>
 
     /**
-     * 这是将idw计算函数优化后的版本，全部数据1690，计算次数1290703700，耗时3.6秒
+     * 1.这是未idw计算函数优化后的版本，
+     * 2.并且cnavas原点进行了偏移，
+     * 3.数组使用push的方式，详见https://www.jb51.net/article/61338.htm (但是实测效率提升不明显)
+     * 4.数组循环使用递减，最快1.1s
+     * 全部数据1690，计算次数520543660，耗时1.1-2.2秒
     */
 
     var mode = {};
@@ -282,7 +286,20 @@
         { min: 40, color: '#6f0015' }
     ];
     var contours, d3Path;
-    
+
+    var myWorker;
+    if (window.Worker) {
+        myWorker = new Worker("./js/worker.js");
+        myWorker.onmessage = function (e) {
+            console.log('Message received from worker');
+            contours
+                .thresholds(10)
+                (e.data)
+                .forEach(fill);
+        }
+    } else {
+        console.log('Your browser doesn\'t support web workers.')
+    }
     var context, contours, d3Path, cnavas;
     function CanvasLayerInit(_data) {
         var canvasLayer = new ol.layer.Image({
@@ -293,15 +310,31 @@
                     const xscale = width / (right - left);
                     const yscale = height / (top - bottom);
 
-                    const pxdata = getPxData(_data, xscale, yscale, top, left);
+
                     const pxregion = getPxRegion(Regioncoord, xscale, yscale, top, left);
-                    const cw = Math.ceil(pxregion.xmax)
-                    const ch = Math.ceil(pxregion.ymax)
+                    const cw = Math.ceil(pxregion.xmax - pxregion.xmin)
+                    const ch = Math.ceil(pxregion.ymax - pxregion.ymin)
+                    // const cw = Math.ceil(pxregion.xmax)
+                    // const ch = Math.ceil(pxregion.ymax)
+
+                    const regionTopLeft = pointToCoord(pxregion.xmin, pxregion.ymin, xscale, yscale, top, left);
+                    const _left = regionTopLeft[0];
+                    const _top = regionTopLeft[1];
+
+                    const regionBottomRight = pointToCoord(pxregion.xmax, pxregion.ymax, xscale, yscale, top, left);
+                    const _right = regionBottomRight[0];
+                    const _bottom = regionBottomRight[1];
+
+                    // 这里是canvas分辨率
+                    const _xscale = cw / (_right - _left);
+                    const _yscale = ch / (_top - _bottom);
+
+                    const pxdata = getPxData(_data, _xscale, _yscale, _top, _left);
 
 
                     let canvas = document.createElement('canvas');
-                    canvas.width = cw;
-                    canvas.height = ch;
+                    canvas.width = Math.ceil(pxregion.xmax);
+                    canvas.height = Math.ceil(pxregion.ymax);
                     canvas.style.display = 'block';
                     // 设置canvas透明度
                     canvas.getContext('2d').globalAlpha = 0.1;
@@ -322,10 +355,14 @@
                     context.globalAlpha = 0.3; //设置透明度
                     context.lineWidth = 2; //线条宽度
 
+                    // 偏移
+                    context.translate(pxregion.xmin, pxregion.ymin);
+                    
 
                     const idwdata = olIDW(pxdata.data, cw, ch);
+                    // myWorker.postMessage({ data: pxdata.data, width: cw, height: ch });
 
-                    //绘图登高线图
+                    //绘图等高线图
                     contours
                         .thresholds(10)
                         (idwdata)
@@ -426,6 +463,12 @@
         }
     }
 
+    function pointToCoord(px, py, xscale, yscale, top, left) {
+        const x = (px / xscale) + left;
+        const y = top - (py / yscale);
+        return [x, y];
+    }
+    
     function coordToPoint(x, y, xscale, yscale, top, left) {
         // var px = Math.abs(left - x) * xscale;
         // var py = Math.abs(top - y) * yscale;
@@ -443,12 +486,7 @@
 
         //已有点初始二维数组
         var dlen = d.length;
-        // var matrixData = new Array(width * height);
-        var matrixData = []
-        // for (var i = 0; i < dlen; i++) {
-        //     var point = d[i];
-        //     matrixData[Math.ceil(point.y * width + point.x)] = point.value;
-        // }
+        var matrixData = new Array(width * height);
 
         /**
          * 插值矩阵数据,时间复杂度O(height*width*len)
@@ -456,23 +494,8 @@
         let idwcount = 0
         for (let i = 0, k1 = 0; i < height; i++) {
             for (let j = 0; j < width; j++ , k1++) {
-                // if (!matrixData[k1]) {
-                //     var sum0 = 0, sum1 = 0;
-                //     for (var k = 0; k < dlen; k++) {
-                //         var dk = d[k];
-                //         var dis = ((i - dk.y) * (i - dk.y) + (j - dk.x) * (j - dk.x));
-                //         sum0 = sum0 + dk.value * 1 / dis;
-                //         sum1 = sum1 + 1 / dis;
-                //         idwcount++
-                //     }
-                //     if (sum1 != 0)
-                //         //matrixData[k1] = sum0 / sum1 - referenceValue;
-                //         matrixData[k1] = sum0 / sum1;
-                //     else
-                //         matrixData[k1] = 1;
-                // }
                 let sum0 = 0, sum1 = 0;
-                for (let k = 0; k < dlen; k++) {
+                for (let k = dlen - 1; k >= 0; k--) {
                     const dk = d[k];
                     const dis = Math.pow((i - dk.y), 2) + Math.pow((j - dk.x), 2);
                     sum0 += dk.value / dis;
@@ -480,12 +503,12 @@
                     idwcount++
                 }
                 if (sum1 != 0)
-                    //matrixData[k1] = sum0 / sum1 - referenceValue;
-                    matrixData[k1] = sum0 / sum1;
+                    // matrixData[k1] = sum0 / sum1 - referenceValue;
+                    // matrixData.push(sum0 / sum1);
+                    matrixData[k1] = sum0 / sum1
                 else
-                    matrixData[k1] = 1;
-
-
+                    // matrixData.push(1);
+                    matrixData[k1] = 1
             }
         }
         console.log(idwcount)
