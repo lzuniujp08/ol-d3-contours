@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+
+<head>
+    <meta charset="UTF-8">
+    <title>contour</title>
+    <link href="./lib/openlayer/ol.css" rel="stylesheet" />
+    <style>
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            padding: 0px;
+            margin: 0px;
+            overflow: hidden;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+
+</body>
+<script src="lib/jqure1.7.min.js"></script>
+<link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.css">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.min.js"></script>
+<!-- 需要用 maptalks worker 分支下的版本 -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/maptalks@1.0.0-alpha.3/dist/maptalks.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@maptalks/gl/dist/maptalksgl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@maptalks/vt/dist/maptalks.vt.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@maptalks/vt.basic/dist/maptalks.vt.basic.js"></script> -->
+<script>
+    map = new maptalks.Map('map', {
+        center: [108.22, 22.48],
+        zoom: 7,
+        minZoom: 5,
+        baseLayer: new maptalks.TileLayer('geoq', {
+            style: 'normal',
+            urlTemplate: 'http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineCommunity/MapServer/tile/{z}/{y}/{x}'
+        })
+    });
+    var layer = new maptalks.VectorLayer('v').addTo(map);
+
+    layer.setStyle([
+        {
+            'filter': ['==', 'value', 24],
+            'symbol': getSymbol('#e03f16')
+        },
+        {
+            'filter': ['==', 'value', 26],
+            'symbol': getSymbol('#d93312')
+        },
+        {
+            'filter': ['==', 'value', 28],
+            'symbol': getSymbol('#d0240e')
+        },
+        {
+            'filter': ['==', 'value', 30],
+            'symbol': getSymbol('#c20003')
+        }
+    ]);
+
+    map.on('click', (evt) => {
+
+    })
+    // 色标卡
+    var colors = [
+        { max: -30, color: '#020c64' },
+        { min: -30, max: -28, color: '#071e78' },
+        { min: -28, max: -26, color: '#11318b' },
+        { min: -26, max: -24, color: '#1b449f' },
+        { min: -24, max: -22, color: '#2657b3' },
+        { min: -22, max: -20, color: '#306ac7' },
+        { min: -20, max: -18, color: '#3b7edb' },
+        { min: -20, max: -18, color: '#3b7edb' },
+        { min: -18, max: -16, color: '#4e8add' },
+        { min: -16, max: -14, color: '#6196e0' },
+        { min: -14, max: -12, color: '#74a3e2' },
+        { min: -12, max: -10, color: '#87afe5' },
+        { min: -10, max: -8, color: '#9bbce8' },
+        { min: -8, max: -6, color: '#9ac4dc' },
+        { min: -6, max: -4, color: '#99cdd0' },
+        { min: -4, max: -2, color: '#98d6c4' },
+        { min: -2, max: 0, color: '#97e8ad' },
+        { min: 0, max: 2, color: '#d7de7e' },
+        { min: 2, max: 4, color: '#eadb70' },
+        { min: 4, max: 6, color: '#f4d963' },
+        { min: 6, max: 8, color: '#facc4f' },
+        { min: 8, max: 10, color: '#f7b42d' },
+        { min: 10, max: 12, color: '#f29b00' },
+        { min: 12, max: 14, color: '#f19303' },
+        { min: 14, max: 16, color: '#f0840a' },
+        { min: 16, max: 18, color: '#ef7511' },
+        { min: 18, max: 20, color: '#ee6618' },
+        { min: 20, max: 22, color: '#ee581f' },
+        { min: 22, max: 24, color: '#e74b1a' },
+        { min: 24, max: 26, color: '#e03f16' },
+        { min: 26, max: 28, color: '#d93312' },
+        { min: 28, max: 30, color: '#d0240e' },
+        { min: 30, max: 32, color: '#c20003' },
+        { min: 32, max: 34, color: '#b50109' },
+        { min: 34, max: 35, color: '#a90210' },
+        { min: 35, max: 37, color: '#8a0519' },
+        { min: 37, max: 40, color: '#6f0015' },
+        { min: 40, color: '#6f0015' }
+    ];
+
+    function AjaxGET() {
+        $.ajax({
+            type: "get",
+            url: "../data/contour.json",
+            dataType: "json",
+            success: function (json) {
+                var multipolygon = new maptalks.GeoJSON.toGeometry(json);
+                layer.addGeometry(multipolygon)
+
+            }
+        });
+    }
+
+    AjaxGET()
+
+    function getColor(_colors, value) {
+        var len = _colors.length;
+        for (var i = 0; i < len; i++) {
+            if (value >= _colors[i].min && value < _colors[i].max) {
+                return _colors[i].color
+            }
+        }
+    }
+
+    function getSymbol(color) {
+        return [
+            {
+                'polygonFill': color,
+                'polygonOpacity': 0.1,
+                'lineColor': color,
+                'lineWidth': 1
+            }
+        ];
+    }
+
+
+
+
+
+
+
+</script>
+
+</html>

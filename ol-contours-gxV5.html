@@ -44,11 +44,7 @@
 <script>
 
     /**
-     * 1.这是未idw计算函数优化后的版本，
-     * 2.并且cnavas原点进行了偏移，
-     * 3.数组使用push的方式，详见https://www.jb51.net/article/61338.htm (但是实测效率提升不明显)
-     * 4.数组循环使用递减，最快1.1s
-     * 全部数据1690，计算次数520543660，耗时1.1-2.2秒
+     * 将插值计算结果丢给contour得到geojson进行绘图
     */
 
     var mode = {};
@@ -285,27 +281,39 @@
         { min: 37, max: 40, color: '#6f0015' },
         { min: 40, color: '#6f0015' }
     ];
-    var contours, d3Path;
 
-    var myWorker;
-    if (window.Worker) {
-        myWorker = new Worker("./js/worker.js");
-        myWorker.onmessage = function (e) {
-            console.log('Message received from worker');
-            contours
-                .thresholds(10)
-                (e.data)
-                .forEach(fill);
-        }
-    } else {
-        console.log('Your browser doesn\'t support web workers.')
-    }
-    var context, contours, d3Path, cnavas;
+
+    let source = new ol.source.Vector();
+    let layer = new ol.layer.Vector({
+        source: source,
+        // style: function (feature, res) {
+        //     const value = parseInt(feature.get('value'));
+        //     const color = getColor(colors, value)
+        //     const style = new ol.style.Style({
+        //         fill: new ol.style.Fill({
+        //             color: color
+        //         }),
+        //         stroke: new ol.style.Stroke({
+        //             color: color,
+        //             width: 1
+        //         })
+        //     })
+        //     return [style];
+        // },
+        opacity: 1
+    });
+    map.addLayer(layer);
+    var dataset = {
+        "type": "FeatureCollection",
+        "features": []
+    };
+    var context, _contours, d3Path, cnavas;
     function CanvasLayerInit(_data) {
         var canvasLayer = new ol.layer.Image({
             source: new ol.source.ImageCanvas({
                 canvasFunction: (extent, resolution, pixelRatio, size, projection) => {
                     const [width, height] = size;
+
                     const [left, bottom, right, top] = extent;
                     const xscale = width / (right - left);
                     const yscale = height / (top - bottom);
@@ -339,7 +347,7 @@
                     // 设置canvas透明度
                     canvas.getContext('2d').globalAlpha = 0.1;
                     context = canvas.getContext('2d');
-                    contours = d3.contours().size([cw, ch]); //等高线绘图实例
+                    _contours = d3.contours().size([cw, ch]); //等高线绘图实例
                     d3Path = d3.geoPath(null, context);  //绘图笔
                     context.clearRect(0, 0, cw, ch);
                     // 绘制裁剪区
@@ -360,15 +368,56 @@
 
 
                     const idwdata = olIDW(pxdata.data, cw, ch);
-                    // myWorker.postMessage({ data: pxdata.data, width: cw, height: ch });
                     const thresholds = getThresholds(pxdata.vmax, pxdata.vmin, colors);
                     //绘图等高线图
-                    contours
+                    _contours
                         .thresholds(thresholds)
                         (idwdata)
-                        .forEach(fill);
+                        .forEach(getContourGeojson);
 
 
+                    function getContourGeojson(geometry) {
+                        let coordinates = geometry.coordinates;
+                        const len1 = coordinates.length;
+                        for (let i = len1 - 1; i >= 0; i--) {
+                            const len2 = coordinates[i].length;
+                            for (let j = len2 - 1; j >= 0; j--) {
+                                const len3 = coordinates[i][j].length;
+                                for (let m = len3 - 1; m >= 0; m--) {
+                                    coordinates[i][j][m] = pointToCoord(coordinates[i][j][m][0] + pxregion.xmin, coordinates[i][j][m][1] + pxregion.ymin, xscale, yscale, top, left)
+                                }
+                            }
+                        }
+                        dataset.features.push({
+                            "type": "Feature",
+                            "properties": {
+                                "value": geometry.value
+                            },
+                            "geometry": {
+                                "type": geometry.type,
+                                "coordinates": coordinates
+                            }
+                        });
+                    }
+                    var format = new ol.format.GeoJSON();
+                    let features = format.readFeatures(dataset);
+                    features.reverse()
+                    features.map((fea) => {
+                        const value = parseInt(fea.get('value'));
+                        const color = getColor(colors, value)
+                        const style = new ol.style.Style({
+                            fill: new ol.style.Fill({
+                                color: color
+                            }),
+                            stroke: new ol.style.Stroke({
+                                color: color,
+                                width: 1
+                            })
+                        })
+                        fea.setStyle(style)
+                    })
+                    source.addFeatures(features);
+                    map.removeLayer(canvasLayer);
                     return canvas;
                 },
                 projection: 'EPSG:4326',
@@ -379,6 +428,8 @@
         map.addLayer(canvasLayer);
     }
 
+
+    // 获取色斑图分度带
     function getThresholds(vmax, vmin, color) {
         const len = color.length;
         const thresholds = [vmin]
@@ -542,51 +593,13 @@
         return matrixData;
     }
 
-    //绘图一条等高线
-    function fill(geometry) {
-        context.beginPath();
-        d3Path(geometry);
-        console.log(geometry.value)
-        var acolor = getColor(colors, geometry.value);
 
-        //等高线梯度着色
-        context.fillStyle = acolor;
-        context.fill();
-
-        //等高线线条
-        context.strokeStyle = acolor;
-        context.stroke();
-    }
-
-    function colorRGB(color) {
-        let sColor = color.toLowerCase();
-        // 处理六位的颜色值
-        const sColorChange = [];
-        // 十六进制颜色值的正则表达式
-        const reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
-        // 如果是16进制颜色
-        if (sColor && reg.test(sColor)) {
-            if (sColor.length === 4) {
-                let sColorNew = '#';
-                for (let i = 1; i < 4; i += 1) {
-                    sColorNew += sColor.slice(i, i + 1).concat(sColor.slice(i, i + 1));
-                }
-                sColor = sColorNew;
-            }
-
-            for (let i = 1; i < 7; i += 2) {
-                sColorChange.push(parseInt('0x' + sColor.slice(i, i + 2)));
-            }
-        }
-        return sColorChange;
-    }
 
     function getColor(_colors, value) {
         var len = _colors.length;
         for (var i = 0; i < len; i++) {
             if (value >= _colors[i].min && value < _colors[i].max) {
-                const color = colorRGB(_colors[i].color);
-                return d3.rgb(color[0], color[1], color[2]);
+                return _colors[i].color
             }
         }
     }
