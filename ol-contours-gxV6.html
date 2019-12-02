@@ -370,7 +370,7 @@
 
                     const idwdata = olIDW(pxdata.data, cw, ch);
                     const thresholds = getThresholds(pxdata.vmax, pxdata.vmin, colors);
-                    turfContour(idwdata,thresholds)
+                    turfContour(idwdata, thresholds)
                     //绘图等高线图
                     _contours
                         .thresholds(thresholds)
@@ -429,9 +429,25 @@
         // 向map添加图层
         map.addLayer(canvasLayer);
     }
+    const gridFeatureCollection = function (grid, xlim, ylim) {
+        var range = grid.zlim[1] - grid.zlim[0];
+        var i, j, x, y, z;
+        var n = grid.length;//列数
+        var m = grid[0].length;//行数
+        var pointArray = [];
+        for (i = 0; i < n; i++)
+            for (j = 0; j < m; j++) {
+                x = (i) * grid.width + grid.xlim[0];
+                y = (j) * grid.width + grid.ylim[0];
+                z = (grid[i][j] - grid.zlim[0]) / range;
+                if (z < 0.0) z = 0.0;
+                if (z > 1.0) z = 1.0;
+                pointArray.push(turf.point([x, y], { value: z }));
+            }
+        return pointArray;
+    }
 
-
-    function turfContour(data,breaks) {
+    function turfContour(data, breaks) {
         var fc = [];
         data.map((item) => {
             fc.push(turf.point([x, y], { value: z }))
