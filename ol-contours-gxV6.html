@@ -165,10 +165,6 @@
     ];
 
     let regionFea = turf.polygon([Regioncoord])
-
-    var formatGeoJSON = new ol.format.GeoJSON({
-        featureProjection: "EPSG:3857"
-    });
     var regionFeatures = new ol.format.GeoJSON().readFeatures(regionFea);
 
     let source = new ol.source.Vector();
