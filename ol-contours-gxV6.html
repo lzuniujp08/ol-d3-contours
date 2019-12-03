@@ -104,10 +104,10 @@
         });
     }
 
-
+    let osm = new ol.source.OSM()
     let baseLayer = new ol.layer.Tile({
         title: "base",
-        source: new ol.source.OSM()
+        source: osm
     });
     var map = new ol.Map({
         target: 'map',
@@ -164,8 +164,12 @@
         { min: 40, color: '#6f0015' }
     ];
 
-
     let regionFea = turf.polygon([Regioncoord])
+
+    var formatGeoJSON = new ol.format.GeoJSON({
+        featureProjection: "EPSG:3857"
+    });
+    var regionFeatures = new ol.format.GeoJSON().readFeatures(regionFea);
 
     let source = new ol.source.Vector();
     let layer = new ol.layer.Vector({
@@ -188,6 +192,34 @@
     });
     map.addLayer(layer);
 
+    var fillStyle = new ol.style.Fill({
+        color: [0, 0, 0, 0]
+    });
+    var styleVC = new ol.style.Style({
+        fill: fillStyle
+    })
+
+    layer.on('precompose', function (event) {
+        const ctx = event.context;
+        const pixelRatio = event.frameState.pixelRatio;
+        // For openlayers v6.0+:
+        // var vecCtx = ol.render.getVectorContext(event);
+        const vecCtx = event.vectorContext;
+        ctx.save();
+        vecCtx.setStyle(styleVC);
+        vecCtx.drawGeometry(regionFeatures[0].getGeometry());
+        ctx.lineWidth = 5 * pixelRatio;
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.stroke();
+        ctx.clip();
+    });
+    // For openlayers v6.0+:
+    // osm.on('postrender', function (event) {
+    layer.on('postcompose', function (event) {
+        const ctx = event.context;
+        ctx.restore();
+    });
+
     function doing(_data) {
         console.time('contour');
         const extent = map.getView().calculateExtent();
@@ -208,19 +240,21 @@
 
         // 有bug
         const context = map.getRenderer().context_;
+        context.save()
         // context.clearRect(0, 0, size[0], size[1]);
         context.beginPath()
         for (let i = 0; i < pxregion.data.length; i++) {
             const rp = pxregion.data[i]
-            if(i ===0){
+            if (i === 0) {
                 context.moveTo(rp.x, rp.y)
-            }else {
+            } else {
                 context.lineTo(rp.x, rp.y)
             }
         }
         context.closePath()
         context.stroke()
         context.clip()
+        context.restore();
         // context.globalAlpha = 0.3; //设置透明度
         // context.lineWidth = 2; //线条宽度
         const idwdata = olIDW(pxdata.data, pxregion);

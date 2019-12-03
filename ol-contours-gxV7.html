@@ -165,6 +165,7 @@
 
 
     let regionFea = turf.polygon([Regioncoord])
+    var regionFeatures = new ol.format.GeoJSON().readFeatures(regionFea);
 
     let source = new ol.source.Vector();
     let layer = new ol.layer.Vector({
@@ -186,6 +187,34 @@
         opacity: 0.9
     });
     map.addLayer(layer);
+
+    var fillStyle = new ol.style.Fill({
+        color: [0, 0, 0, 0]
+    });
+    var styleVC = new ol.style.Style({
+        fill: fillStyle
+    })
+
+    layer.on('precompose', function (event) {
+        const ctx = event.context;
+        const pixelRatio = event.frameState.pixelRatio;
+        // For openlayers v6.0+:
+        // var vecCtx = ol.render.getVectorContext(event);
+        const vecCtx = event.vectorContext;
+        ctx.save();
+        vecCtx.setStyle(styleVC);
+        vecCtx.drawGeometry(regionFeatures[0].getGeometry());
+        ctx.lineWidth = 5 * pixelRatio;
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.stroke();
+        ctx.clip();
+    });
+    // For openlayers v6.0+:
+    // osm.on('postrender', function (event) {
+    layer.on('postcompose', function (event) {
+        const ctx = event.context;
+        ctx.restore();
+    });
     var dataset = {
         "type": "FeatureCollection",
         "features": []
