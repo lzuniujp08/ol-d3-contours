@@ -21271,32 +21271,6 @@
             "Lat": "22.68"
         },
         {
-            "Cnty": "江州",
-            "Station_Type": "4",
-            "Town": "",
-            "Station_Name": "江州那隆气象观测站",
-            "Station_Id_d": "787010",
-            "Lon": "107.54",
-            "City": "崇左",
-            "Station_Id_C": "N7010",
-            "Station_levl": "14",
-            "TEM": "0",
-            "Lat": "22.75"
-        },
-        {
-            "Cnty": "江州",
-            "Station_Type": "4",
-            "Town": "",
-            "Station_Name": "江州那隆气象观测站",
-            "Station_Id_d": "787010",
-            "Lon": "107.54",
-            "City": "崇左",
-            "Station_Id_C": "N7010",
-            "Station_levl": "14",
-            "TEM": "0",
-            "Lat": "22.76"
-        },
-        {
             "Cnty": "扶绥",
             "Station_Type": "4",
             "Town": "",

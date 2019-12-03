@@ -307,7 +307,7 @@
         "type": "FeatureCollection",
         "features": []
     };
-    var context, _contours, d3Path, cnavas;
+    var context, _contours;
     function CanvasLayerInit(_data) {
         var canvasLayer = new ol.layer.Image({
             source: new ol.source.ImageCanvas({
@@ -348,7 +348,6 @@
                     canvas.getContext('2d').globalAlpha = 0.1;
                     context = canvas.getContext('2d');
                     _contours = d3.contours().size([cw, ch]); //等高线绘图实例
-                    d3Path = d3.geoPath(null, context);  //绘图笔
                     context.clearRect(0, 0, cw, ch);
                     // 绘制裁剪区
                     context.beginPath()
@@ -379,6 +378,7 @@
                     function getContourGeojson(geometry) {
                         let coordinates = geometry.coordinates;
                         const len1 = coordinates.length;
+
                         for (let i = len1 - 1; i >= 0; i--) {
                             const len2 = coordinates[i].length;
                             for (let j = len2 - 1; j >= 0; j--) {

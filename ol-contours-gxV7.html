@@ -42,11 +42,11 @@
 <script src="lib/dat.gui.min.js"></script>
 <script src="lib/turf.min.js"></script>
 <script src="lib/openlayer/ol-debug.js"></script>
+<script src="data/gxregion.js"></script>
 <script>
 
     /**
-     * 将插值计算结果(girddata)丢给turf.isband得到geojson进行绘图)
-     * turf.isband 底层是contour
+     * 将插值计算结果丢给contour得到geojson进行绘图
     */
 
     var mode = {};
@@ -98,7 +98,7 @@
             dataType: "json",
             success: function (json) {
                 originData = json.data;
-                doing(originData);
+                ContourInit(originData);
             }
         });
     }
@@ -121,127 +121,6 @@
     map.on('click', (evt) => {
         const px = map.getPixelFromCoordinate(evt.coordinate);
     })
-
-    //  定义裁剪边界
-    var Regioncoord = [
-        [112.018771, 24.742991],
-        [111.922317, 24.632471],
-        [112.052286, 24.389786],
-        [111.907721, 24.224724],
-        [111.935284, 23.99064],
-        [111.782283, 23.810257],
-        [111.481793, 23.629179],
-        [111.359452, 23.346328],
-        [111.353528, 22.891877],
-        [111.050612, 22.651229],
-        [110.745143, 22.560068],
-        [110.720781, 22.298481],
-        [110.499475, 22.145777],
-        [110.376498, 22.166857],
-        [110.386609, 21.952634],
-        [110.228064, 21.881519],
-        [109.941204, 21.847098],
-        [109.91003, 21.669518],
-        [109.745674, 21.591496],
-        [109.539086, 21.501962],
-        [109.15403, 21.403121],
-        [109.122942, 21.587646],
-        [108.792872, 21.635169],
-        [108.60476, 21.703956],
-        [108.393108, 21.553679],
-        [107.951241, 21.54183],
-        [107.856644, 21.654128],
-        [107.670284, 21.60483],
-        [107.384808, 21.598426],
-        [107.08438, 21.809196],
-        [107.06249, 21.897733],
-        [106.73693, 22.007554],
-        [106.660017, 22.334552],
-        [106.560223, 22.466608],
-        [106.70794, 22.579877],
-        [106.777117, 22.816929],
-        [106.605147, 22.927294],
-        [106.278289, 22.870475],
-        [106.202497, 22.985729],
-        [105.87158, 22.934157],
-        [105.541938, 23.193556],
-        [105.593011, 23.316427],
-        [105.864068, 23.534543],
-        [106.06837, 23.490039],
-        [106.193344, 23.839618],
-        [105.994917, 24.127046],
-        [105.838247, 24.033708],
-        [105.489794, 24.019978],
-        [105.22658, 24.168574],
-        [105.194475, 24.330613],
-        [105.047563, 24.444132],
-        [104.726227, 24.448855],
-        [104.519247, 24.538205],
-        [104.527261, 24.734426],
-        [104.62901, 24.663423],
-        [104.844471, 24.682999],
-        [105.030901, 24.790381],
-        [105.208045, 24.998223],
-        [105.443885, 24.919389],
-        [105.495992, 24.811707],
-        [105.762584, 24.723646],
-        [106.041005, 24.684321],
-        [106.167491, 24.761768],
-        [106.15812, 24.941302],
-        [106.434716, 25.021159],
-        [106.680148, 25.180254],
-        [106.894823, 25.194612],
-        [107.008447, 25.277277],
-        [106.959281, 25.440187],
-        [107.061434, 25.559848],
-        [107.314724, 25.506024],
-        [107.50047, 25.213561],
-        [107.75099, 25.241621],
-        [107.790364, 25.11902],
-        [108.135347, 25.238027],
-        [108.151225, 25.373298],
-        [108.327262, 25.538863],
-        [108.333191, 25.53823],
-        [108.41749, 25.443103],
-        [108.595029, 25.45789],
-        [108.757891, 25.640718],
-        [108.948369, 25.559414],
-        [108.946082, 25.734292],
-        [108.949757, 25.73391],
-        [108.954053, 25.734548],
-        [109.074594, 25.779999],
-        [109.292203, 25.717137],
-        [109.479632, 26.033639],
-        [109.781434, 25.992915],
-        [109.965848, 26.203308],
-        [110.059684, 26.045225],
-        [110.236062, 26.036341],
-        [110.546618, 26.236968],
-        [110.599353, 26.327283],
-        [110.794692, 26.27094],
-        [111.088237, 26.307829],
-        [111.277339, 26.27252],
-        [111.190019, 25.959266],
-        [111.378677, 25.884694],
-        [111.385872, 25.885442],
-        [111.302121, 25.720935],
-        [111.283031, 25.434527],
-        [111.097418, 25.285984],
-        [110.946744, 25.046674],
-        [110.987204, 24.960625],
-        [110.984792, 24.955197],
-        [110.989943, 24.93469],
-        [110.990291, 24.934372],
-        [110.990023, 24.933248],
-        [111.098564, 24.995761],
-        [111.098286, 24.99812],
-        [111.270769, 25.154386],
-        [111.468114, 25.015803],
-        [111.425673, 24.688552],
-        [111.567414, 24.648724],
-        [111.676845, 24.781188],
-        [112.018771, 24.742991]
-    ]
     // 色标卡
     var colors = [
         { max: -30, color: '#020c64' },
@@ -304,11 +183,15 @@
             })
             return [style];
         },
-        opacity: 1
+        opacity: 0.9
     });
     map.addLayer(layer);
+    var dataset = {
+        "type": "FeatureCollection",
+        "features": []
+    };
 
-    function doing(_data) {
+    function ContourInit(_data) {
         console.time('contour');
         const extent = map.getView().calculateExtent();
         const left = extent[0];
@@ -321,107 +204,96 @@
         const yscale = size[1] / (extop - bottom);
 
         const pxregion = getPxRegion(Regioncoord, xscale, yscale, extop, left);
-        const pxdata = getPxData(_data, xscale, yscale, extop, left);
 
-        // const context = map.getRenderer().getLayerRenderer(layer).context
+        const cw = pxregion.xmax - pxregion.xmin;
+        const ch = pxregion.ymax - pxregion.ymin
 
+        const regionTopLeft = pointToCoord(pxregion.xmin, pxregion.ymin, xscale, yscale, extop, left);
+        const _left = regionTopLeft[0];
+        const _top = regionTopLeft[1];
 
-        // 有bug
-        // const context = map.getRenderer().context_;
-        // // context.clearRect(0, 0, size[0], size[1]);
-        // context.beginPath()
-        // for (let i = 0; i < pxregion.data.length; i++) {
-        //     const rp = pxregion.data[i]
-        //     if(i ===0){
-        //         context.moveTo(rp.x, rp.y)
-        //     }else {
-        //         context.lineTo(rp.x, rp.y)
-        //     }
-        // }
-        // context.closePath()
-        // context.stroke()
-        // context.clip()
-        // context.globalAlpha = 0.3; //设置透明度
-        // context.lineWidth = 2; //线条宽度
-        const idwdata = olIDW(pxdata.data, pxregion);
+        const regionBottomRight = pointToCoord(pxregion.xmax, pxregion.ymax, xscale, yscale, extop, left);
+        const _right = regionBottomRight[0];
+        const _bottom = regionBottomRight[1];
+
+        // 这里是画布分辨率
+        const _xscale = cw / (_right - _left);
+        const _yscale = ch / (_top - _bottom);
+
+        const pxdata = getPxData(_data, _xscale, _yscale, _top, _left);
+        // const pxdata = getPxData(_data, xscale, yscale, extop, left);
+        const contours = d3.contours().size([cw, ch]); //等高线绘图实例
+        const idwdata = olIDW(pxdata.data, cw, ch);
         const thresholds = getThresholds(pxdata.vmax, pxdata.vmin, colors);
-        turfContour(idwdata, thresholds, pxregion, xscale, yscale, extop, left);
-        console.timeEnd('contour');
-    }
+        //绘图等高线图
+        contours
+            .thresholds(thresholds)
+            (idwdata)
+            .forEach(getContourGeojson);
 
-    function turfContour(data, breaks, pxregion, xscale, yscale, extop, left) {
-        var fc = [];
-        const xmin = pxregion.xmin;
-        const xmax = pxregion.xmax;
-        const ymin = pxregion.ymin;
-        const ymax = pxregion.ymax;
-        const width = xmax - xmin;
-        const height = ymax - ymin;
-        // for (let i = ymin, k1 = 0; i < ymax; i++) {
-        //     for (let j = xmin; j < xmax; j++ , k1++) {
-        //         const coord = pointToCoord(j, i, xscale, yscale, extop, left)
-        //         fc.push(turf.point([coord[0], coord[1]], { value: data[k1].value }))
-        //     }
-        // }
-        data.map((item) => {
-            const coord = pointToCoord(item.x, item.y, xscale, yscale, extop, left)
-            fc.push(turf.point([coord[0], coord[1]], { value: item.value }))
-        })
-        var collection = turf.featureCollection(fc);
-        var isobands = turf.isobands(collection, breaks, { zProperty: 'value' });
-        // isobands.features.map((fea) => {
-        //     let _fea = turf.intersect(regionFea, fea)
-        //     if (!_fea) {
-        //         return fea
-        //     } else {
-        //         _fea.properties = fea.properties
-        //         return _fea
-        //     }
-        // })
+
+        function getContourGeojson(geometry) {
+            let coordinates = geometry.coordinates;
+            const len1 = coordinates.length;
+
+            for (let i = len1 - 1; i >= 0; i--) {
+                const len2 = coordinates[i].length;
+                for (let j = len2 - 1; j >= 0; j--) {
+                    const len3 = coordinates[i][j].length;
+                    for (let m = len3 - 1; m >= 0; m--) {
+                        coordinates[i][j][m] = pointToCoord(coordinates[i][j][m][0] + pxregion.xmin, coordinates[i][j][m][1] + pxregion.ymin, xscale, yscale, extop, left)
+                    }
+                }
+            }
+            const fea = {
+                "type": "Feature",
+                "properties": {
+                    "value": geometry.value
+                },
+                "geometry": {
+                    "type": geometry.type,
+                    "coordinates": coordinates
+                }
+            }
+            // 相交去除多余
+            let _fea = turf.intersect(regionFea, fea)
+            if (!_fea) {
+                dataset.features.push(fea);
+            } else {
+                _fea.properties = fea.properties
+                dataset.features.push(_fea);
+            }
+        }
+
         function sortArea(a, b) {
             return turf.area(b) - turf.area(a);
         }
         //按照面积对图层进行排序，规避turf的一个bug
-        isobands.features.sort(sortArea)
-        var polyFeatures = new ol.format.GeoJSON().readFeatures(isobands, {
-            featureProjection: 'EPSG:4326'
-        })
-        source.addFeatures(polyFeatures);
-
+        dataset.features.sort(sortArea)
+        const format = new ol.format.GeoJSON();
+        let features = format.readFeatures(dataset);
+        source.addFeatures(features);
+        console.timeEnd('contour');
     }
-
-
-
 
 
     // 获取色斑图分度带
     function getThresholds(vmax, vmin, color) {
         const len = color.length;
-        const thresholds = [vmin];
+        const thresholds = [vmin]
         for (let i = 0; i < len; i++) {
-            if (
-                typeof color[i]['min'] != 'number' ||
-                typeof color[i]['max'] != 'number'
-            ) {
-                continue;
+            if (typeof (color[i]['min']) != 'number' || typeof (color[i]['max']) != 'number') {
+                continue
             }
-            if (
-                color[i]['min'] >= vmin &&
-                color[i]['min'] < vmax &&
-                color[i]['min'] !== thresholds[thresholds.length - 1]
-            ) {
-                thresholds.push(color[i]['min']);
+            if (color[i]['min'] >= vmin && color[i]['min'] < vmax && color[i]['min'] !== thresholds[thresholds.length - 1]) {
+                thresholds.push(color[i]['min'])
             }
-            if (
-                color[i]['max'] >= vmin &&
-                color[i]['max'] < vmax &&
-                color[i]['max'] !== thresholds[thresholds.length - 1]
-            ) {
-                thresholds.push(color[i]['max']);
+            if (color[i]['max'] >= vmin && color[i]['max'] < vmax && color[i]['max'] !== thresholds[thresholds.length - 1]) {
+                thresholds.push(color[i]['max'])
             }
         }
-        thresholds.push(vmax);
-        return thresholds;
+        thresholds.push(vmax)
+        return thresholds
     }
 
     function getPxRegion(data, xscale, yscale, top, left) {
@@ -504,8 +376,6 @@
     }
 
     function coordToPoint(x, y, xscale, yscale, top, left) {
-        // var px = Math.abs(left - x) * xscale;
-        // var py = Math.abs(top - y) * yscale;
         // 目的是为了剔除范围外的数据
         let px = (x - left) * xscale;
         let py = (top - y) * yscale;
@@ -514,26 +384,18 @@
         return [px, py]
     }
 
-    function olIDW(data, pxregion) {
+    function olIDW(data, width, height) {
         const s = new Date().getTime();
         const d = data;
-        const xmin = pxregion.xmin;
-        const xmax = pxregion.xmax;
-        const ymin = pxregion.ymin;
-        const ymax = pxregion.ymax;
-        const width = xmax - xmin;
-        const height = ymax - ymin;
-
         //已有点初始二维数组
         const dlen = d.length;
         let matrixData = new Array(width * height);
-
         /**
          * 插值矩阵数据,时间复杂度O(height*width*len)
          */
         let idwcount = 0
-        for (let i = ymin, k1 = 0; i < ymax; i++) {
-            for (let j = xmin; j < xmax; j++ , k1++) {
+        for (let i = 0, k1 = 0; i < height; i++) {
+            for (let j = 0; j < width; j++ , k1++) {
                 let sum0 = 0, sum1 = 0;
                 for (let k = dlen - 1; k >= 0; k--) {
                     const dk = d[k];
@@ -542,15 +404,7 @@
                     sum1 += 1 / dis;
                     idwcount++
                 }
-                matrixData[k1] = { x: j, y: i, value: sum0 / sum1 }
-                // if (sum1 != 0)
-                //     // matrixData[k1] = sum0 / sum1 - referenceValue;
-                //     // matrixData.push(sum0 / sum1);
-                //     matrixData[k1] = sum0 / sum1
-                // // matrixData[k1] = { x: j, y: i, value: sum0 / sum1 }
-                // else
-                //     // matrixData.push(1);
-                //     matrixData[k1] = 1
+                matrixData[k1] = sum0 / sum1
             }
         }
         console.log(idwcount)
@@ -558,6 +412,8 @@
         console.log('插值：' + (e - s) / 1000 + '秒');
         return matrixData;
     }
+
+
 
     function getColor(_colors, value) {
         var len = _colors.length;
