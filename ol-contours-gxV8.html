@@ -103,13 +103,30 @@
         });
     }
 
-    let baseLayer = new ol.layer.Tile({
-        title: "base",
-        source: new ol.source.OSM()
+    const tdtBase = new ol.layer.Tile({
+        title: "天地图矢量经纬度底图",
+        source: new ol.source.XYZ({
+            url: "http://t0.tianditu.gov.cn/DataServer?T=vec_w&X={x}&Y={y}&L={z}&tk=c4f61f8b0b036ff262d8b480fa826711"
+        })
+    })
+
+    const tdt_cva_w = new ol.layer.Tile({
+        title: "天地图经纬度矢量注记",
+        source: new ol.source.XYZ({
+            url: 'http://t0.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=c4f61f8b0b036ff262d8b480fa826711'
+        }),
+        zIndex: 999
+    });
+    const tdt_cia_w = new ol.layer.Tile({
+        title: "天地图经纬度道路",
+        source: new ol.source.XYZ({
+            url: 'http://t0.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=c4f61f8b0b036ff262d8b480fa826711'
+        }),
+        zIndex: 998
     });
     var map = new ol.Map({
         target: 'map',
-        layers: [baseLayer],
+        layers: [tdtBase, tdt_cva_w, tdt_cia_w],
         view: new ol.View({
             center: [108.22, 22.48],
             projection: 'EPSG:4326',
@@ -197,34 +214,44 @@
         const pxdata = getPxData(_data, _xscale, _yscale, _top, _left);
         // const pxdata = getPxData(_data, xscale, yscale, extop, left);
         const contours = d3.contours().size([cw, ch]); //等高线绘图实例
-        const idwdata = olIDW(pxdata.data, cw, ch);
-        girdLayerInit(idwdata, cw, ch)
+        const rec = 1;
+        const idwdata = olIDW(pxdata.data, Math.floor(cw / rec), Math.floor(ch / rec));
+        girdLayerInit(idwdata, Math.floor(cw / rec), Math.floor(ch / rec))
         console.timeEnd('contour');
     }
 
     function girdLayerInit(grid, n, m) {
-        const girdWidth = (regionExtent[2] - regionExtent[0]) / 500
+        const girdWidth = (regionExtent[2] - regionExtent[0]) / n
         var canvasLayer = new ol.layer.Image({
             source: new ol.source.ImageCanvas({
                 canvasFunction: (extent, resolution, pixelRatio, size, projection) => {
                     let canvas = document.createElement('canvas');
                     canvas.width = size[0];
                     canvas.height = size[1];
+
+                    const xscale = size[0] / (extent[2] - extent[0]);
+                    const yscale = size[1] / (extent[3] - extent[1]);
+
+                    const pxregion = getPxRegion(Regioncoord, xscale, yscale, extent[3], extent[0]);
+
                     canvas.style.display = 'block';
                     //设置canvas透明度
-                    canvas.getContext('2d').globalAlpha = 0.3;
+                    canvas.getContext('2d').globalAlpha = 1;
                     let ctx = canvas.getContext("2d");
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    var wx = girdWidth * canvas.width / (regionExtent[2] - regionExtent[0])
-                    var wy = girdWidth * canvas.height / (regionExtent[3] - regionExtent[1])
-                    for (let i = 0, k = 0; i < n; i++)
-                        for (let j = 0; j < m; j++ , k++) {// todo
+                    var wx = girdWidth * canvas.width / (extent[2] - extent[0])
+                    var wy = girdWidth * canvas.height / (extent[3] - extent[1])
+                    // for (let i = 0, k = 0; i < m; i++)
+                    for (let i = m - 1, k = 0; i >= 0; i--)
+                        for (let j = 0; j < n; j++ , k++) {// todo
                             if (grid[k] == undefined) continue;
-                            const x = canvas.width * (i * girdWidth + regionExtent[0] - regionExtent[0]) / (regionExtent[2] - regionExtent[0]);
-                            const y = canvas.height * (j * girdWidth + regionExtent[1] - regionExtent[1]) / (regionExtent[3] - regionExtent[1]);
+                            const x = canvas.width * (j * girdWidth + regionExtent[0] - extent[0]) / (extent[2] - extent[0]);
+                            const y = canvas.height * (1 - (i * girdWidth + regionExtent[1] - extent[1]) / (extent[3] - extent[1]));
+                            // const x = j + pxregion.xmin;
+                            // const y = i + pxregion.ymin;
                             ctx.fillStyle = getColor(colors, grid[k]);
-                            // ctx.fillRect(Math.round(x - wx / 2), Math.round(y - wy / 2), wx, wy);
                             ctx.fillRect(x - wx / 2, y - wy / 2, wx, wy);
+                            // ctx.fillRect(x, y, 1, 1);
                         }
                     return canvas;
                 },

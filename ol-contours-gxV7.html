@@ -103,14 +103,34 @@
         });
     }
 
+    const tdtBase = new ol.layer.Tile({
+        title: "天地图矢量经纬度底图",
+        source: new ol.source.XYZ({
+            url: "http://t0.tianditu.gov.cn/DataServer?T=vec_w&X={x}&Y={y}&L={z}&tk=c4f61f8b0b036ff262d8b480fa826711"
+        })
+    })
 
-    let baseLayer = new ol.layer.Tile({
+    const tdt_cva_w = new ol.layer.Tile({
+        title: "天地图经纬度矢量注记",
+        source: new ol.source.XYZ({
+            url: 'http://t0.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=c4f61f8b0b036ff262d8b480fa826711'
+        }),
+        zIndex: 999
+    });
+    const tdt_cia_w = new ol.layer.Tile({
+        title: "天地图经纬度道路",
+        source: new ol.source.XYZ({
+            url: 'http://t0.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=c4f61f8b0b036ff262d8b480fa826711'
+        }),
+        zIndex: 998
+    });
+    const baseLayer = new ol.layer.Tile({
         title: "base",
         source: new ol.source.OSM()
     });
     var map = new ol.Map({
         target: 'map',
-        layers: [baseLayer],
+        layers: [tdtBase, tdt_cva_w, tdt_cia_w],
         view: new ol.View({
             center: [108.22, 22.48],
             projection: 'EPSG:4326',

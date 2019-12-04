@@ -312,8 +312,8 @@
 
 
                     const pxregion = getPxRegion(Regioncoord, xscale, yscale, top, left);
-                    const cw = Math.ceil(pxregion.xmax - pxregion.xmin)
-                    const ch = Math.ceil(pxregion.ymax - pxregion.ymin)
+                    const cw = pxregion.xmax - pxregion.xmin
+                    const ch = pxregion.ymax - pxregion.ymin
                     // const cw = Math.ceil(pxregion.xmax)
                     // const ch = Math.ceil(pxregion.ymax)
 
@@ -337,7 +337,7 @@
                     canvas.height = Math.ceil(pxregion.ymax);
                     canvas.style.display = 'block';
                     // 设置canvas透明度
-                    canvas.getContext('2d').globalAlpha = 0.1;
+                    canvas.getContext('2d').globalAlpha = 1;
                     context = canvas.getContext('2d');
                     contours = d3.contours().size([cw, ch]); //等高线绘图实例
                     d3Path = d3.geoPath(null, context);  //绘图笔
@@ -352,7 +352,7 @@
                     context.stroke()
                     context.clip()
 
-                    context.globalAlpha = 0.3; //设置透明度
+                    context.globalAlpha =1; //设置透明度
                     context.lineWidth = 2; //线条宽度
 
                     // 偏移
@@ -430,10 +430,10 @@
         }
         return {
             data: _data,
-            xmax: xmax,
-            ymax: ymax,
-            xmin: xmin,
-            ymin: ymin,
+            xmax: Math.floor(xmax),
+            ymax: Math.floor(ymax),
+            xmin: Math.floor(xmin),
+            ymin: Math.floor(ymin),
         }
     }
 
@@ -546,8 +546,12 @@
     function fill(geometry) {
         context.beginPath();
         d3Path(geometry);
-        console.log(geometry.value)
         var acolor = getColor(colors, geometry.value);
+        // if (geometry.value === 32) {
+        //     acolor = getColor(colors, geometry.value)
+        // } else {
+        //     acolor = '#ffffff00'
+        // }
 
         //等高线梯度着色
         context.fillStyle = acolor;
