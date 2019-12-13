@@ -190,51 +190,9 @@
     let source = new ol.source.Vector();
     let layer = new ol.layer.Vector({
         source: source,
-        // style: function (feature, res) {
-        //     const value = parseInt(feature.get('value'));
-        //     const color = getColor(colors, value)
-        //     const type = feature.getGeometry().getType();
-        //     let style = null;
-        //     if (type === 'point') {
-        //         style = new ol.style.Style({
-        //             text: new ol.style.Text({
-        //                 value: value,
-        //                 stroke: new ol.style.Stroke({ color: '#000000', width: 2 }),
-        //             })
-        //         })
-        //     } else {
-        //         style = new ol.style.Style({
-        //             fill: new ol.style.Fill({
-        //                 color: color
-        //             }),
-        //             stroke: new ol.style.Stroke({
-        //                 color: color,
-        //                 width: 1
-        //             })
-        //         })
-        //     }
-        //     return [style];
-        // },
         opacity: 0.9
     });
     map.addLayer(layer);
-    // const marker = new ol.Feature({
-    //     geometry: new ol.geom.Point([108.22, 22.48])
-    // })
-    // marker.setStyle(
-    //     new ol.style.Style({
-    //         text: new ol.style.Text({
-    //             font: '8px sans-serif',
-    //             text: '12',
-    //             fill: new ol.style.Fill({
-    //                 color: '#000000'
-    //             }),
-    //             textAlign: 'left',
-    //             stroke: new ol.style.Stroke({ color: '#000000', width: 0.5 }),
-    //         })
-    //     })
-    // )
-    // source.addFeature(marker)
 
 
     var fillStyle = new ol.style.Fill({
