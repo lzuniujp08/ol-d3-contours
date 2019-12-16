@@ -52,6 +52,7 @@
     var mode = {};
 
     mode.dataLoad = false;
+    mode.base64 = false;
     mode.mapType = 'contour';
     mode.heatmap_line = true;
     mode.contour_isfull = true;
@@ -68,6 +69,10 @@
         if (!originData) {
             AjaxGET()
         }
+    });
+    gui.add(mode, 'base64').onChange(function () {
+        const { cw, ch, pxregion, _left, _top, _xscale, _yscale } = parmImg
+        GetBase64(cw, ch, pxregion, _left, _top, _xscale, _yscale);
     });
     gui.add(mode, 'mapType', ['heatmap', 'contour']).onChange(function () {
 
@@ -244,11 +249,10 @@
 
     function GetBase64(w, h, pxRegion, _left, _top, _xscale, _yscale) {
         const context = map.getRenderer().getLayerRenderer(layer).context;
-        // const context = map.getRenderer().getLayerRenderer(layer).context.canvas.getContext("2d");
 
         const imgdata = context.getImageData(
-            0,
-            0,
+            pxRegion.xmin,
+            pxRegion.ymin,
             w,
             h
         );
@@ -273,28 +277,40 @@
             { Lon: 108.35002999989, Lat: 21.68961300024, Value: '防城港市' },
             { Lon: 108.08114600009, Lat: 24.69566499994, Value: '河池市' }
         ];
-        // for (let m = 0; m < city.length; m++) {
-        //     let px = (city[m].Lon - _left) * _xscale;
-        //     let py = (_top - city[m].Lat) * _yscale;
-        //     px > 0 ? null : (px = 0);
-        //     py > 0 ? null : (py = 0);
-        //     const c = {
-        //         x: px,
-        //         y: py,
-        //         value: city[m].Value
-        //     };
-        //     _context.beginPath();
-        //     _context.font = "10px SimHei"; //设置字体样式
-        //     _context.strokeStyle = "black"; //设置字体颜色
-        //     _context.fillText(c.value, c.x + 2, c.y - 2);
-        //     _context.arc(c.x, c.y, 2.5, 0, Math.PI * 2, false);
-        //     _context.fillStyle = "red";
-        //     _context.fill();
-        //     _context.stroke();
+        for (let m = 0; m < city.length; m++) {
+            let px = (city[m].Lon - _left) * _xscale;
+            let py = (_top - city[m].Lat) * _yscale;
+            px > 0 ? null : (px = 0);
+            py > 0 ? null : (py = 0);
+            const c = {
+                x: px,
+                y: py,
+                value: city[m].Value
+            };
+            _context.beginPath();
+            _context.font = "10px SimHei"; //设置字体样式
+            _context.strokeStyle = "white"; //设置字体颜色
+            _context.fillText(c.value, c.x + 2, c.y - 2);
+            _context.arc(c.x, c.y, 2.5, 0, Math.PI * 2, false);
+            _context.fillStyle = "black";
+            _context.fill();
+            _context.stroke();
+        }
+        // _context.beginPath()
+        // for (let i = 0; i < pxRegion.data.length; i++) {
+        //     const rp = pxRegion.data[i]
+        //     _context.lineTo(rp.x, rp.y)
         // }
+        // _context.closePath()
+        // _context.stroke()
+        // _context.clip()
         const baseIMG = _canvas.toDataURL('image/png', 1);
+        _canvas.remove();
     }
 
+    var parmImg = {
+
+    }
     function ContourInit(_data) {
         console.time('contour');
         const extent = map.getView().calculateExtent();
@@ -379,8 +395,9 @@
         let features = format.readFeatures(dataset);
         source.addFeatures(features);
         console.timeEnd('contour');
-
-        GetBase64(cw, ch, pxregion, _left, _top, _xscale, _yscale)
+        parmImg = {
+            cw, ch, pxregion, _left, _top, _xscale, _yscale
+        }
     }
 
 
