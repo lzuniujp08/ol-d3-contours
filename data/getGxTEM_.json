@@ -1849,6 +1849,19 @@
             "Lat": "21.82"
         },
         {
+            "Cnty": "涠洲岛",
+            "Station_Type": "4",
+            "Town": "",
+            "Station_Name": "涠洲岛盛塘气象观测站",
+            "Station_Id_d": "789004",
+            "Lon": "109.12",
+            "City": "北海",
+            "Station_Id_C": "N9004",
+            "Station_levl": "14",
+            "TEM": "31.6",
+            "Lat": "21.06"
+        },
+        {
             "Cnty": "钦南",
             "Station_Type": "4",
             "Town": "",
@@ -1899,6 +1912,19 @@
             "Station_levl": "14",
             "TEM": "31.7",
             "Lat": "21.53"
+        },
+        {
+            "Cnty": "涠洲岛",
+            "Station_Type": "4",
+            "Town": "",
+            "Station_Name": "北部湾一号浮标国家气象观测站",
+            "Station_Id_d": "789170",
+            "Lon": "109.17",
+            "City": "北海",
+            "Station_Id_C": "N9170",
+            "Station_levl": "14",
+            "TEM": "30.2",
+            "Lat": "20.5"
         },
         {
             "Cnty": "邕宁",
@@ -2172,6 +2198,32 @@
             "Station_levl": "999999",
             "TEM": "33.6",
             "Lat": "21.68"
+        },
+        {
+            "Cnty": "涠洲岛",
+            "Station_Type": "4",
+            "Town": "",
+            "Station_Name": "涠洲岛竹蔗寮气象观测站",
+            "Station_Id_d": "789070",
+            "Lon": "109.09",
+            "City": "北海",
+            "Station_Id_C": "N9070",
+            "Station_levl": "14",
+            "TEM": "32.2",
+            "Lat": "21.04"
+        },
+        {
+            "Cnty": "涠洲岛",
+            "Station_Type": "4",
+            "Town": "",
+            "Station_Name": "斜阳岛气象观测站",
+            "Station_Id_d": "789080",
+            "Lon": "109.22",
+            "City": "北海",
+            "Station_Id_C": "N9080",
+            "Station_levl": "14",
+            "TEM": "31.8",
+            "Lat": "20.91"
         },
         {
             "Cnty": "海城",
