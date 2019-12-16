@@ -260,6 +260,17 @@
         _canvas.width = w;
         _canvas.height = h;
         const _context = _canvas.getContext("2d");
+        // _context.beginPath()
+        // for (let i = 0; i < Regioncoord.length; i++) {
+        //     let px = (Regioncoord[i][0] - _left) * _xscale;
+        //     let py = (_top - Regioncoord[i][1]) * _yscale;
+        //     px > 0 ? null : (px = 0);
+        //     py > 0 ? null : (py = 0);
+        //     _context.lineTo(px, py)
+        // }
+        // _context.closePath()
+        // _context.stroke()
+        // _context.clip()
         _context.putImageData(imgdata, 0, 0);
         const city = [
             { Lon: 108.36257099995, Lat: 22.81908700016, Value: '南宁市' },
@@ -296,21 +307,12 @@
             _context.fill();
             _context.stroke();
         }
-        // _context.beginPath()
-        // for (let i = 0; i < pxRegion.data.length; i++) {
-        //     const rp = pxRegion.data[i]
-        //     _context.lineTo(rp.x, rp.y)
-        // }
-        // _context.closePath()
-        // _context.stroke()
-        // _context.clip()
+
         const baseIMG = _canvas.toDataURL('image/png', 1);
         _canvas.remove();
     }
 
-    var parmImg = {
-
-    }
+    var parmImg = {}
     function ContourInit(_data) {
         console.time('contour');
         const extent = map.getView().calculateExtent();
