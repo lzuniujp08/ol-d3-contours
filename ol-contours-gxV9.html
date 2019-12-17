@@ -229,7 +229,29 @@
         ctx.save();
         vecCtx.setStyle(styleVC);
         vecCtx.drawGeometry(regionFeatures[0].getGeometry());
-        ctx.lineWidth = 5 * pixelRatio;
+
+        // if (parmImg) {
+        //     // const { cw, ch, pxregion, _left, _top, _xscale, _yscale } = parmImg
+        //     const extent = map.getView().calculateExtent();
+        //     const left = extent[0];
+        //     const bottom = extent[1];
+        //     const right = extent[2];
+        //     const extop = extent[3];
+        //     const size = map.getSize();
+
+        //     const xscale = size[0] / (right - left);
+        //     const yscale = size[1] / (extop - bottom);
+        //     ctx.beginPath()
+        //     for (let i = 0; i < Regioncoord.length; i++) {
+        //         let px = (Regioncoord[i][0] - left) * xscale;
+        //         let py = (extop - Regioncoord[i][1]) * yscale;
+        //         px > 0 ? null : (px = 0);
+        //         py > 0 ? null : (py = 0);
+        //         ctx.lineTo(px, py)
+        //     }
+        //     ctx.closePath()
+        // }
+        ctx.lineWidth = 1 * pixelRatio;
         ctx.strokeStyle = 'rgba(0,0,0,0.5)';
         ctx.stroke();
         ctx.clip();
@@ -248,7 +270,29 @@
     };
 
     function GetBase64(w, h, pxRegion, _left, _top, _xscale, _yscale) {
+
         const context = map.getRenderer().getLayerRenderer(layer).context;
+        // context.save()
+        // context.beginPath()
+        // const extent = map.getView().calculateExtent();
+        // const left = extent[0];
+        // const bottom = extent[1];
+        // const right = extent[2];
+        // const extop = extent[3];
+        // const size = map.getSize();
+
+        // const xscale = size[0] / (right - left);
+        // const yscale = size[1] / (extop - bottom);
+        // for (let i = 0; i < Regioncoord.length; i++) {
+        //     let px = (Regioncoord[i][0] - left) * xscale;
+        //     let py = (extop - Regioncoord[i][1]) * yscale;
+        //     px > 0 ? null : (px = 0);
+        //     py > 0 ? null : (py = 0);
+        //     context.lineTo(px, py)
+        // }
+        // context.closePath()
+        // // context.stroke()
+        // context.clip()
 
         const imgdata = context.getImageData(
             pxRegion.xmin,
@@ -256,22 +300,26 @@
             w,
             h
         );
+        // context.restore()
         const _canvas = document.createElement("canvas");
         _canvas.width = w;
         _canvas.height = h;
+        _canvas.style.display = 'block';
         const _context = _canvas.getContext("2d");
-        // _context.beginPath()
-        // for (let i = 0; i < Regioncoord.length; i++) {
-        //     let px = (Regioncoord[i][0] - _left) * _xscale;
-        //     let py = (_top - Regioncoord[i][1]) * _yscale;
-        //     px > 0 ? null : (px = 0);
-        //     py > 0 ? null : (py = 0);
-        //     _context.lineTo(px, py)
-        // }
-        // _context.closePath()
-        // _context.stroke()
-        // _context.clip()
+        _context.clearRect(0, 0, w, h);
         _context.putImageData(imgdata, 0, 0);
+        _context.beginPath()
+        for (let i = 0; i < Regioncoord.length; i++) {
+            let px = (Regioncoord[i][0] - _left) * _xscale;
+            let py = (_top - Regioncoord[i][1]) * _yscale;
+            px > 0 ? null : (px = 0);
+            py > 0 ? null : (py = 0);
+            _context.lineTo(px, py)
+        }
+        _context.closePath()
+        _context.stroke()
+        _context.clip()
+
         const city = [
             { Lon: 108.36257099995, Lat: 22.81908700016, Value: '南宁市' },
             { Lon: 106.61442399987, Lat: 23.90626500023, Value: '百色市' },
