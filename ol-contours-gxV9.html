@@ -288,7 +288,12 @@
         //     let py = (extop - Regioncoord[i][1]) * yscale;
         //     px > 0 ? null : (px = 0);
         //     py > 0 ? null : (py = 0);
-        //     context.lineTo(px, py)
+        //     // context.lineTo(px, py)
+        //     if (i === 0) {
+        //         context.moveTo(px, py)
+        //     } else {
+        //         context.lineTo(px, py)
+        //     }
         // }
         // context.closePath()
         // // context.stroke()
@@ -307,19 +312,23 @@
         _canvas.style.display = 'block';
         const _context = _canvas.getContext("2d");
         _context.clearRect(0, 0, w, h);
-        _context.putImageData(imgdata, 0, 0);
+        // _context.putImageData(imgdata, 0, 0);
         _context.beginPath()
         for (let i = 0; i < Regioncoord.length; i++) {
             let px = (Regioncoord[i][0] - _left) * _xscale;
             let py = (_top - Regioncoord[i][1]) * _yscale;
-            px > 0 ? null : (px = 0);
-            py > 0 ? null : (py = 0);
-            _context.lineTo(px, py)
+            // px > 0 ? null : (px = 0);
+            // py > 0 ? null : (py = 0);
+            if (i === 0) {
+                _context.moveTo(px, py)
+            } else {
+                _context.lineTo(px, py)
+            }
         }
         _context.closePath()
         _context.stroke()
         _context.clip()
-
+        _context.putImageData(imgdata, 0, 0);
         const city = [
             { Lon: 108.36257099995, Lat: 22.81908700016, Value: '南宁市' },
             { Lon: 106.61442399987, Lat: 23.90626500023, Value: '百色市' },
