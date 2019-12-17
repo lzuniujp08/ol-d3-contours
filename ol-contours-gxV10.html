@@ -71,8 +71,8 @@
         }
     });
     gui.add(mode, 'base64').onChange(function () {
-        const { cw, ch, pxregion, _left, _top, _xscale, _yscale } = parmImg
-        GetBase64(cw, ch, pxregion, _left, _top, _xscale, _yscale);
+        const { cw, ch, pxregion, pxdata, idwdata, _left, _top, _xscale, _yscale } = parmImg
+        GetBase64(cw, ch, pxregion, pxdata, idwdata, _left, _top, _xscale, _yscale);
     });
     gui.add(mode, 'mapType', ['heatmap', 'contour']).onChange(function () {
 
@@ -229,28 +229,6 @@
         ctx.save();
         vecCtx.setStyle(styleVC);
         vecCtx.drawGeometry(regionFeatures[0].getGeometry());
-
-        // if (parmImg) {
-        //     // const { cw, ch, pxregion, _left, _top, _xscale, _yscale } = parmImg
-        //     const extent = map.getView().calculateExtent();
-        //     const left = extent[0];
-        //     const bottom = extent[1];
-        //     const right = extent[2];
-        //     const extop = extent[3];
-        //     const size = map.getSize();
-
-        //     const xscale = size[0] / (right - left);
-        //     const yscale = size[1] / (extop - bottom);
-        //     ctx.beginPath()
-        //     for (let i = 0; i < Regioncoord.length; i++) {
-        //         let px = (Regioncoord[i][0] - left) * xscale;
-        //         let py = (extop - Regioncoord[i][1]) * yscale;
-        //         px > 0 ? null : (px = 0);
-        //         py > 0 ? null : (py = 0);
-        //         ctx.lineTo(px, py)
-        //     }
-        //     ctx.closePath()
-        // }
         ctx.lineWidth = 1 * pixelRatio;
         ctx.strokeStyle = 'rgba(0,0,0,0.5)';
         ctx.stroke();
@@ -269,51 +247,16 @@
         "features": []
     };
 
-    function GetBase64(w, h, pxRegion, _left, _top, _xscale, _yscale) {
-
-        const context = map.getRenderer().getLayerRenderer(layer).context;
-        // const context = map.getRenderer().context_
-        // context.save()
-        // context.beginPath()
-        // const extent = map.getView().calculateExtent();
-        // const left = extent[0];
-        // const bottom = extent[1];
-        // const right = extent[2];
-        // const extop = extent[3];
-        // const size = map.getSize();
-
-        // const xscale = size[0] / (right - left);
-        // const yscale = size[1] / (extop - bottom);
-        // for (let i = 0; i < Regioncoord.length; i++) {
-        //     let px = (Regioncoord[i][0] - left) * xscale;
-        //     let py = (extop - Regioncoord[i][1]) * yscale;
-        //     px > 0 ? null : (px = 0);
-        //     py > 0 ? null : (py = 0);
-        //     // context.lineTo(px, py)
-        //     if (i === 0) {
-        //         context.moveTo(px, py)
-        //     } else {
-        //         context.lineTo(px, py)
-        //     }
-        // }
-        // context.closePath()
-        // context.stroke()
-        // context.clip()
-
-        const imgdata = context.getImageData(
-            pxRegion.xmin,
-            pxRegion.ymin,
-            w,
-            h
-        );
-        // context.restore()
+    function GetBase64(w, h, pxRegion, pxdata, idwdata,_left, _top, _xscale, _yscale) {
+        console.time('base64');
         const _canvas = document.createElement("canvas");
         _canvas.width = w;
         _canvas.height = h;
         _canvas.style.display = 'block';
         const _context = _canvas.getContext("2d");
+        let contours = d3.contours().size([w, h]); //等高线绘图实例
+        let d3Path = d3.geoPath(null, _context);  //绘图笔
         _context.clearRect(0, 0, w, h);
-        // _context.putImageData(imgdata, 0, 0);
         _context.beginPath()
         for (let i = 0; i < Regioncoord.length; i++) {
             let px = (Regioncoord[i][0] - _left) * _xscale;
@@ -329,7 +272,27 @@
         _context.closePath()
         _context.stroke()
         _context.clip()
-        // _context.putImageData(imgdata, 0, 0);
+
+        const thresholds = getThresholds(pxdata.vmax, pxdata.vmin, colors);
+        contours
+            .thresholds(10)
+            (idwdata)
+            .forEach(fill);
+
+        //绘图一条等高线
+        function fill(geometry) {
+            _context.beginPath();
+            d3Path(geometry);
+            var acolor = getColor(colors, geometry.value);
+
+            //等高线梯度着色
+            _context.fillStyle = acolor;
+            _context.fill();
+
+            //等高线线条
+            _context.strokeStyle = acolor;
+            _context.stroke();
+        }
         const city = [
             { Lon: 108.36257099995, Lat: 22.81908700016, Value: '南宁市' },
             { Lon: 106.61442399987, Lat: 23.90626500023, Value: '百色市' },
@@ -368,6 +331,8 @@
 
         const baseIMG = _canvas.toDataURL('image/png', 1);
         _canvas.remove();
+        console.log(baseIMG);
+        console.timeEnd('base64');
     }
 
     var parmImg = {}
@@ -456,7 +421,7 @@
         source.addFeatures(features);
         console.timeEnd('contour');
         parmImg = {
-            cw, ch, pxregion, _left, _top, _xscale, _yscale
+            cw, ch, pxregion, pxdata, idwdata, _left, _top, _xscale, _yscale
         }
     }
 
