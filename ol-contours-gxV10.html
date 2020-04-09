@@ -42,7 +42,7 @@
 <script src="lib/dat.gui.min.js"></script>
 <script src="lib/turf.min.js"></script>
 <script src="lib/openlayer/ol-debug.js"></script>
-<script src="data/gxregion.js"></script>
+<script src="data/procince.js"></script>
 <script>
 
     /**
@@ -189,10 +189,7 @@
         { min: 37, max: 40, color: '#6f0015' },
         { min: 40, color: '#6f0015' }
     ];
-
-
-    let regionFea = turf.polygon([Regioncoord])
-    var regionFeatures = new ol.format.GeoJSON().readFeatures(regionFea);
+    var regionFeatures = new ol.format.GeoJSON().readFeatures(Regioncoord);
 
     let source = new ol.source.Vector();
     let layer = new ol.layer.Vector({
@@ -228,12 +225,15 @@
         // For openlayers v6.0+:
         // var vecCtx = ol.render.getVectorContext(event);
         const vecCtx = event.vectorContext;
-        ctx.save();
         vecCtx.setStyle(styleVC);
-        vecCtx.drawGeometry(regionFeatures[0].getGeometry());
         ctx.lineWidth = 1 * pixelRatio;
         ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-        ctx.stroke();
+        regionFeatures.map(fea => {
+            ctx.save();
+            vecCtx.drawGeometry(fea.getGeometry());
+            ctx.stroke();
+        })
+
         ctx.clip();
 
 
@@ -249,7 +249,7 @@
         "features": []
     };
 
-    function GetBase64(w, h, pxRegion, pxdata, idwdata,_left, _top, _xscale, _yscale) {
+    function GetBase64(w, h, pxRegion, pxdata, idwdata, _left, _top, _xscale, _yscale) {
         console.time('base64');
         const _canvas = document.createElement("canvas");
         _canvas.width = w;
@@ -350,7 +350,8 @@
         const xscale = size[0] / (right - left);
         const yscale = size[1] / (extop - bottom);
 
-        const pxregion = getPxRegion(Regioncoord, xscale, yscale, extop, left);
+        const areaExtent = regionFeatures[0].getGeometry().getExtent()
+        const pxregion = getPxRegion([[areaExtent[0],areaExtent[1]],[areaExtent[2],areaExtent[3]]], xscale, yscale, extop, left);
 
         const cw = pxregion.xmax - pxregion.xmin;
         const ch = pxregion.ymax - pxregion.ymin;
@@ -403,14 +404,15 @@
                     "coordinates": coordinates
                 }
             }
-            // 相交去除多余
-            let _fea = turf.intersect(regionFea, fea)
-            if (!_fea) {
-                dataset.features.push(fea);
-            } else {
-                _fea.properties = fea.properties
-                dataset.features.push(_fea);
-            }
+            dataset.features.push(fea);
+            // // 相交去除多余
+            // let _fea = turf.intersect(regionFeatures[0], fea)
+            // if (!_fea) {
+            //     dataset.features.push(fea);
+            // } else {
+            //     _fea.properties = fea.properties
+            //     dataset.features.push(_fea);
+            // }
         }
 
         function sortArea(a, b) {
@@ -546,7 +548,7 @@
          */
         let idwcount = 0
         for (let i = 0, k1 = 0; i < height; i++) {
-            for (let j = 0; j < width; j++ , k1++) {
+            for (let j = 0; j < width; j++, k1++) {
                 let sum0 = 0, sum1 = 0;
                 for (let k = dlen - 1; k >= 0; k--) {
                     const dk = d[k];
