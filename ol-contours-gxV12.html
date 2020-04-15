@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+
+<head>
+    <meta charset="UTF-8">
+    <title>contour</title>
+    <link href="./lib/openlayer/ol.css" rel="stylesheet" />
+    <style>
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            padding: 0px;
+            margin: 0px;
+            overflow: hidden;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        #contour {
+            position: absolute;
+            z-index: 999;
+            top: 0px;
+            left: 0px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+
+</body>
+<script src="lib/jqure1.7.min.js"></script>
+<script src="lib/d3.v4.min.js"></script>
+<script src="lib/d3-contour.v1.min.js"></script>
+<script src="lib/dat.gui.min.js"></script>
+<script src="lib/turf.min.js"></script>
+<script src="lib/openlayer/ol-debug.js"></script>
+<script src="js/color.util.js"></script>
+<script src="data/procince.js"></script>
+<script>
+
+    /**
+     * 将插值计算结果丢给contour得到geojson进行绘图
+     * todo 加入涠洲岛
+     * ol边界裁剪bug
+    */
+
+    var mode = {};
+
+    mode.dataLoad = false;
+    // GUI
+    var gui = new dat.GUI();
+
+    // 下拉框形式选择文案
+    gui.add(mode, 'dataLoad').onChange(function () {
+        if (!originData) {
+            AjaxGET()
+        }
+    });
+
+    var originData;
+    function AjaxGET() {
+        $.ajax({
+            type: "get",
+            url: "./data/getGxTEM.json",
+            dataType: "json",
+            success: function (json) {
+                originData = json.data;
+                ContourInit(originData);
+            }
+        });
+    }
+
+    const tdtBase = new ol.layer.Tile({
+        title: "天地图矢量经纬度底图",
+        source: new ol.source.XYZ({
+            url: "http://t0.tianditu.gov.cn/DataServer?T=vec_w&X={x}&Y={y}&L={z}&tk=c4f61f8b0b036ff262d8b480fa826711"
+        })
+    })
+
+    const tdt_cva_w = new ol.layer.Tile({
+        title: "天地图经纬度矢量注记",
+        source: new ol.source.XYZ({
+            url: 'http://t0.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=c4f61f8b0b036ff262d8b480fa826711'
+        }),
+        zIndex: 999
+    });
+    const tdt_cia_w = new ol.layer.Tile({
+        title: "天地图经纬度道路",
+        source: new ol.source.XYZ({
+            url: 'http://t0.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=c4f61f8b0b036ff262d8b480fa826711'
+        }),
+        zIndex: 998
+    });
+
+    const googleMapLayer = new ol.layer.Tile({
+        title: "高德",
+        source: new ol.source.XYZ({
+            url: 'http://mt{0-3}.google.cn/vt/lyrs=m@235000000&hl=zh-CN&gl=CN&src=app&x={x}&y={y}&z={z}&s=Galileo'
+        })
+    });
+    const baseLayer = new ol.layer.Tile({
+        title: "base",
+        source: new ol.source.OSM()
+    });
+    var map = new ol.Map({
+        target: 'map',
+        layers: [googleMapLayer],
+        view: new ol.View({
+            center: ol.proj.transform([108.22, 22.48], 'EPSG:4326', 'EPSG:3857'),
+            projection: 'EPSG:3857',
+            zoom: 7
+        })
+    });
+
+    map.on('click', (evt) => {
+        const px = map.getPixelFromCoordinate(evt.coordinate);
+        const coord = map.getCoordinateFromPixel(px);
+    })
+    let _coordinates = Regioncoord.features[0].geometry.coordinates
+    for (let u = 0; u < _coordinates.length; u++) {
+        for (let v = 0; v < _coordinates[u].length; v++) {
+            _coordinates[u][v] = ol.proj.transform(_coordinates[u][v], 'EPSG:4326', 'EPSG:3857')
+        }
+    }
+    Regioncoord.features[0].geometry.coordinates = _coordinates
+    var regionFeatures = new ol.format.GeoJSON().readFeatures(Regioncoord);
+
+    let source = new ol.source.Vector();
+    let layer = new ol.layer.Vector({
+        source: source,
+        style: function (feature, res) {
+            const value = parseInt(feature.get('value'));
+            const color = getColor(colors, value)
+            const style = new ol.style.Style({
+                fill: new ol.style.Fill({
+                    color: color
+                }),
+                stroke: new ol.style.Stroke({
+                    color: color,
+                    width: 1
+                })
+            })
+            return [style];
+        },
+        opacity: 0.9
+    });
+    map.addLayer(layer);
+
+    var fillStyle = new ol.style.Fill({
+        color: [0, 0, 0, 0]
+    });
+    var styleVC = new ol.style.Style({
+        fill: fillStyle
+    })
+
+    layer.on('precompose', function (event) {
+        const ctx = event.context;
+        const pixelRatio = event.frameState.pixelRatio;
+        // For openlayers v6.0+:
+        // var vecCtx = ol.render.getVectorContext(event);
+        const vecCtx = event.vectorContext;
+        vecCtx.setStyle(styleVC);
+        ctx.lineWidth = 1 * pixelRatio;
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        regionFeatures.map(fea => {
+            ctx.save();
+            vecCtx.drawGeometry(fea.getGeometry());
+            ctx.stroke();
+        })
+
+        ctx.clip();
+
+
+    });
+    // For openlayers v6.0+:
+    // osm.on('postrender', function (event) {
+    layer.on('postcompose', function (event) {
+        const ctx = event.context;
+        ctx.restore();
+    });
+    var dataset = {
+        "type": "FeatureCollection",
+        "features": []
+    };
+    function ContourInit(_data) {
+        console.time('contour');
+        const extent = map.getView().calculateExtent();
+        const a = ol.proj.transform([extent[0], extent[1]], 'EPSG:3857', 'EPSG:4326')
+        const left = a[0];
+        const bottom = a[1];
+        const b = ol.proj.transform([extent[2], extent[3]], 'EPSG:3857', 'EPSG:4326')
+        const right = b[0];
+        const extop = b[1];
+        const size = map.getSize();
+
+        const xscale = size[0] / (right - left);
+        const yscale = size[1] / (extop - bottom);
+
+        const areaExtent = regionFeatures[0].getGeometry().getExtent()
+        const pxregion = getPxRegion([ol.proj.transform([areaExtent[0], areaExtent[1]], 'EPSG:3857', 'EPSG:4326'), ol.proj.transform([areaExtent[2], areaExtent[3]], 'EPSG:3857', 'EPSG:4326')], xscale, yscale, extop, left);
+
+        const cw = pxregion.xmax - pxregion.xmin;
+        const ch = pxregion.ymax - pxregion.ymin;
+
+        const regionTopLeft = pointToCoord(pxregion.xmin, pxregion.ymin, xscale, yscale, extop, left);
+        const _left = regionTopLeft[0];
+        const _top = regionTopLeft[1];
+        const pxdata = getPxData(_data, xscale, yscale, _top, _left);
+        const contours = d3.contours().size([cw, ch]); //等高线绘图实例
+        const idwdata = olIDW(pxdata.data, cw, ch);
+        const thresholds = getThresholds(pxdata.vmax, pxdata.vmin, colors);
+        //绘图等高线图
+        contours
+            .thresholds(thresholds)
+            (idwdata)
+            .forEach(getContourGeojson);
+
+        function getContourGeojson(geometry) {
+            let coordinates = geometry.coordinates;
+            const len1 = coordinates.length;
+            if (len1 === 0) { return }
+
+            for (let i = len1 - 1; i >= 0; i--) {
+                const len2 = coordinates[i].length;
+                for (let j = len2 - 1; j >= 0; j--) {
+                    const len3 = coordinates[i][j].length;
+                    for (let m = len3 - 1; m >= 0; m--) {
+                        coordinates[i][j][m] = map.getCoordinateFromPixel([coordinates[i][j][m][0] + pxregion.xmin, coordinates[i][j][m][1] + pxregion.ymin])
+                    }
+                }
+            }
+            const fea = {
+                "type": "Feature",
+                "properties": {
+                    "value": geometry.value
+                },
+                "geometry": {
+                    "type": geometry.type,
+                    "coordinates": coordinates
+                }
+            }
+            dataset.features.push(fea);
+        }
+
+        function sortArea(a, b) {
+            return turf.area(b) - turf.area(a);
+        }
+        //按照面积对图层进行排序，规避turf的一个bug
+        dataset.features.sort(sortArea)
+        const format = new ol.format.GeoJSON();
+        let features = format.readFeatures(dataset);
+        source.addFeatures(features);
+        console.timeEnd('contour');
+    }
+
+    // 获取色斑图分度带
+    function getThresholds(vmax, vmin, color) {
+        const len = color.length;
+        const thresholds = [vmin]
+        for (let i = 0; i < len; i++) {
+            if (typeof (color[i]['min']) != 'number' || typeof (color[i]['max']) != 'number') {
+                continue
+            }
+            if (color[i]['min'] >= vmin && color[i]['min'] < vmax && color[i]['min'] !== thresholds[thresholds.length - 1]) {
+                thresholds.push(color[i]['min'])
+            }
+            if (color[i]['max'] >= vmin && color[i]['max'] < vmax && color[i]['max'] !== thresholds[thresholds.length - 1]) {
+                thresholds.push(color[i]['max'])
+            }
+        }
+        thresholds.push(vmax)
+        return thresholds
+    }
+
+    function getPxRegion(data, xscale, yscale, top, left) {
+        var _data = [];
+        var xmax = 0;
+        var ymax = 0;
+        var xmin = 9999;
+        var ymin = 9999;
+        for (var i = 0; i < data.length; i++) {
+            var p = coordToPoint(data[i][0], data[i][1], xscale, yscale, top, left)
+            if (i === 0) {
+                xmax = p[0];
+                ymax = p[1];
+            }
+            if (p[0] != 0 || p[1] != 0) {
+                xmax > p[0] ? null : xmax = p[0];
+                ymax > p[1] ? null : ymax = p[1];
+                xmin < p[0] ? null : xmin = p[0];
+                ymin < p[1] ? null : ymin = p[1];
+                _data.push({
+                    x: p[0],
+                    y: p[1]
+                })
+            }
+        }
+        return {
+            data: _data,
+            xmax: Math.floor(xmax),
+            ymax: Math.floor(ymax),
+            xmin: Math.floor(xmin),
+            ymin: Math.floor(ymin),
+        }
+    }
+
+    function getPxData(data, xscale, yscale, top, left) {
+        var _data = [];
+        var xmax = 0;
+        var ymax = 0;
+        var xmin = 9999;
+        var ymin = 9999;
+        var vmax = 0;
+        var vmin = 999999;
+        for (var i = 0; i < data.length; i++) {
+            var p = coordToPoint(data[i].Lon, data[i].Lat, xscale, yscale, top, left)
+            if (i === 0) {
+                xmax = p[0];
+                ymax = p[1];
+            }
+            if (p[0] != 0 || p[1] != 0) {
+                const _value = Number(data[i].TEM);
+                xmax > p[0] ? null : xmax = p[0];
+                ymax > p[1] ? null : ymax = p[1];
+                xmin < p[0] ? null : xmin = p[0];
+                ymin < p[1] ? null : ymin = p[1];
+                vmax > _value ? null : (vmax = _value);
+                vmin < _value ? null : (vmin = _value);
+                _data.push({
+                    x: p[0],
+                    y: p[1],
+                    value: _value
+                })
+            }
+        }
+        // value一定要确保是number类型，否则在插值计算的会先string转number再计算，影响效率
+        return {
+            data: _data,
+            xmax: xmax,
+            ymax: ymax,
+            xmin: xmin,
+            ymin: ymin,
+            vmax: Math.floor(vmax),
+            vmin: Math.floor(vmin)
+        }
+    }
+
+    function pointToCoord(px, py, xscale, yscale, top, left) {
+        const x = (px / xscale) + left;
+        const y = top - (py / yscale);
+        return [x, y];
+    }
+
+    function coordToPoint(x, y, xscale, yscale, top, left) {
+        // 目的是为了剔除范围外的数据
+        let px = (x - left) * xscale;
+        let py = (top - y) * yscale;
+        px > 0 ? null : px = 0;
+        py > 0 ? null : py = 0;
+        return [px, py]
+    }
+
+    function olIDW(data, width, height) {
+        const s = new Date().getTime();
+        const d = data;
+        //已有点初始二维数组
+        const dlen = d.length;
+        let matrixData = new Array(width * height);
+        /**
+         * 插值矩阵数据,时间复杂度O(height*width*len)
+         */
+        let idwcount = 0
+        for (let i = 0, k1 = 0; i < height; i++) {
+            for (let j = 0; j < width; j++, k1++) {
+                let sum0 = 0, sum1 = 0;
+                for (let k = dlen - 1; k >= 0; k--) {
+                    const dk = d[k];
+                    const dis = Math.pow((i - dk.y), 2) + Math.pow((j - dk.x), 2);
+                    sum0 += dk.value / dis;
+                    sum1 += 1 / dis;
+                    idwcount++
+                }
+                matrixData[k1] = sum0 / sum1
+            }
+        }
+        console.log(idwcount)
+        const e = new Date().getTime();
+        console.log('插值：' + (e - s) / 1000 + '秒');
+        return matrixData;
+    }
+
+    function getColor(_colors, value) {
+        var len = _colors.length;
+        for (var i = 0; i < len; i++) {
+            if (value >= _colors[i].min && value < _colors[i].max) {
+                return _colors[i].color
+            }
+        }
+    }
+
+</script>
+
+</html>
