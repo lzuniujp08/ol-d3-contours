@@ -195,9 +195,9 @@
         const extent = map.getView().calculateExtent();
         const areaExtent = regionFeatures[0].getGeometry().getExtent()
         const pxregion = getPxRegion(areaExtent);
-        const cw = pxregion.xmax;
-        const ch = pxregion.ymax;
-        const pxdata = getPxData(_data);
+        const cw = pxregion.xmax - pxregion.xmin;
+        const ch = pxregion.ymax - pxregion.ymin;
+        const pxdata = getPxData(_data, pxregion.xmin, pxregion.ymin);
         const contours = d3.contours().size([cw, ch]); //等高线绘图实例
         const idwdata = olIDW(pxdata.data, cw, ch);
         const thresholds = getThresholds(pxdata.vmax, pxdata.vmin, colors);
@@ -290,7 +290,7 @@
         }
     }
 
-    function getPxData(data) {
+    function getPxData(data, xoffset, yoffset) {
         var _data = [];
         var xmax = 0;
         var ymax = 0;
@@ -313,8 +313,8 @@
                 vmax > _value ? null : (vmax = _value);
                 vmin < _value ? null : (vmin = _value);
                 _data.push({
-                    x: p[0],
-                    y: p[1],
+                    x: p[0] - xoffset,
+                    y: p[1] - yoffset,
                     value: _value
                 })
             }
